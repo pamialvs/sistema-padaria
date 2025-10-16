@@ -1,0 +1,130 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Noto+Sans:ital,wght@0,100..900;1,100..900&display=swap");
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  list-style: none;
+  text-decoration: none;
+  font-family: "Inter", sans-serif;
+}
+$primary-color: #E88C22; // Laranja/Dourado do logo
+$secondary-bg-color: #8B1C1C; // Vermelho Escuro/Bordô do fundo da Imagem 1
+$dark-text: #3c3c3c; // Um tom escuro para o texto, similar ao da Imagem 2
+$light-gray-border: #e0e0e0; // Mantido para bordas de input
+$background-white: #ffffff; // Branco para fundos e textos claros
+
+.container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: 100vh;
+  font-family: sans-serif;
+
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+// --- Coluna da Esquerda ---
+.loginSection {
+  background-color: $background-white;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+}
+
+// --- Estilos para o formulário e seus elementos ---
+.loginTitle {
+  font-size: 2.2rem;
+  color: $dark-text;
+  margin-bottom: 2rem;
+  width: 100%;
+  max-width: 380px;
+}
+
+.loginForm {
+  width: 100%;
+  max-width: 380px;
+  display: flex;
+  flex-direction: column;
+}
+
+.inputGroup {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 1.2rem;
+
+    label {
+        color: $dark-text;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+
+    input {
+        width: 100%;
+        padding: 1rem;
+        border: 1px solid $light-gray-border;
+        border-radius: 8px;
+        font-size: 1rem;
+
+        &:focus {
+            outline: none;
+            border-color: $primary-color; // Borda ao focar com a cor da marca
+            box-shadow: 0 0 0 2px rgba($primary-color, 0.2);
+        }
+    }
+}
+
+.buttonLogin {
+  width: 100%;
+  padding: 1rem;
+  background-color: $primary-color; 
+  color: $background-white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  margin-top: 1.5rem;
+
+  &:hover {
+    background-color: dark($primary-color, 10%); 
+  }
+}
+
+.signupLink {
+    margin-top: 2rem;
+    color: $dark-text;
+    
+    a {
+        color: $primary-color;
+        font-weight: 600;
+        text-decoration: none;
+        &:hover {
+            text-decoration: underline;
+        }
+    }
+}
+
+.illustrationSection {
+  background-color: $secondary-bg-color; 
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+  text-align: center;
+
+  img {
+    max-width: 80%;
+    margin-bottom: 3rem;
+  }
+
+  
+  @media (max-width: 900px) {
+    display: none;
+  }
+}

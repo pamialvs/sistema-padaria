@@ -1,0 +1,67 @@
+import { useState } from "react";
+import s from './login.module.scss';
+import imgLogin from '../../Assests/img-login.png';
+import { Link } from "react-router-dom"; 
+
+export default function Login() {
+  const [email, setEmail] = useState("");
+  const [senha, setSenha] = useState("");
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    // Aqui entra a lógica backend
+    console.log("Email:", email);
+    console.log("Senha:", senha);
+    alert("Login enviado!");
+  };
+
+  return (
+    <main className={s.container}>
+      
+      <section className={s.loginSection}>
+        <h1 className={s.loginTitle}>Faça seu Login</h1>
+        
+        <form className={s.loginForm} onSubmit={handleLogin}>
+          
+          <div className={s.inputGroup}>
+            <label htmlFor="email">E-mail</label>
+            <input
+              id="email"
+              type="email"
+              placeholder="seu-email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
+
+          <div className={s.inputGroup}>
+            <label htmlFor="senha">Senha</label>
+            <input
+              id="senha"
+              type="password"
+              placeholder="sua senha"
+              value={senha}
+              onChange={(e) => setSenha(e.target.value)}
+              required
+            />
+          </div>
+
+          <input
+            type="submit"
+            value="Entrar"
+            className={s.buttonLogin}
+          />
+        </form>
+        <p className={s.signupLink}>
+            <Link to="/cadastro">Crie agora</Link>
+        </p>
+        
+      </section>
+
+      <section className={s.illustrationSection}>
+       <img src={imgLogin} alt="Ilustração" />   
+      </section>
+    </main>
+  );
+}
