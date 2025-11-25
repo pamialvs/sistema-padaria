@@ -71,7 +71,7 @@ $background-white: #ffffff; // Branco para fundos e textos claros
 
         &:focus {
             outline: none;
-            border-color: $primary-color; // Borda ao focar com a cor da marca
+            border-color: $primary-color; // Borda ao focar com a cor
             box-shadow: 0 0 0 2px rgba($primary-color, 0.2);
         }
     }

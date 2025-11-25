@@ -1,0 +1,360 @@
+/* dashboard.module.scss */
+
+// --- Variáveis da Marca ---
+$primary-color: #E88C22;      // Laranja/Dourado
+$primary-light: #fff1e0;
+$secondary-color: #8B1C1C;    // Bordô
+$bg-body: #f4f7f6;            // Fundo cinza claro (estilo Construct)
+$bg-white: #ffffff;
+$text-dark: #1a1a1a;
+$text-gray: #64748b;
+$border-light: #e2e8f0;
+$green: #10b981;
+$red: #ef4444;
+
+.layout {
+  display: flex;
+  min-height: 100vh;
+  background-color: $bg-body;
+  font-family: 'Poppins', sans-serif;
+  color: $text-dark;
+}
+
+// --- Sidebar ---
+.sidebar {
+  width: 260px;
+  background-color: $bg-white;
+  border-right: 1px solid $border-light;
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem;
+  flex-shrink: 0;
+
+  .logoContainer {
+    margin-bottom: 2.5rem;
+    .logo {
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: $primary-color;
+      letter-spacing: -0.5px;
+    }
+  }
+
+  .nav {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .navItem {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border-radius: 8px;
+    color: $text-gray;
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 0.95rem;
+    transition: all 0.2s;
+
+    &:hover {
+      background-color: $primary-light;
+      color: $primary-color;
+    }
+
+    &.active {
+      background-color: $primary-color;
+      color: white;
+      box-shadow: 0 4px 12px rgba($primary-color, 0.3);
+    }
+  }
+
+  .sidebarFooter {
+    margin-top: auto;
+    padding-top: 1rem;
+    border-top: 1px solid $border-light;
+  }
+
+  .logoutBtn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border: none;
+    background: none;
+    color: $text-gray;
+    cursor: pointer;
+    font-weight: 500;
+    border-radius: 8px;
+    &:hover {
+      background-color: #fee2e2;
+      color: $red;
+    }
+  }
+}
+
+// --- Main Content Wrapper ---
+.mainWrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+}
+
+// --- Topbar ---
+.topbar {
+  height: 70px;
+  background-color: $bg-white;
+  border-bottom: 1px solid $border-light;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 2rem;
+
+  .searchWrapper {
+    position: relative;
+    width: 300px;
+
+    .searchIcon {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: $text-gray;
+    }
+
+    .searchInput {
+      width: 100%;
+      padding: 10px 10px 10px 40px;
+      border-radius: 8px;
+      border: 1px solid $border-light;
+      background-color: #f8fafc;
+      outline: none;
+      &:focus {
+        border-color: $primary-color;
+        background-color: #fff;
+      }
+    }
+  }
+
+  .profileWrapper {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+
+    .iconBtn {
+      background: none;
+      border: none;
+      color: $text-gray;
+      cursor: pointer;
+      position: relative;
+      &:hover { color: $primary-color; }
+    }
+
+    .userProfile {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      
+      .avatar {
+        width: 36px;
+        height: 36px;
+        background-color: $secondary-color;
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.9rem;
+        font-weight: 600;
+      }
+      
+      span {
+        font-weight: 500;
+        font-size: 0.9rem;
+      }
+    }
+  }
+}
+
+// --- Dashboard Content Area ---
+.content {
+  padding: 2rem;
+  overflow-y: auto;
+
+  .pageHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 2rem;
+
+    .title { font-size: 1.8rem; font-weight: 700; margin-bottom: 4px; }
+    .subtitle { color: $text-gray; font-size: 0.95rem; }
+
+    .primaryBtn {
+      background-color: $primary-color;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba($primary-color, 0.3);
+      transition: transform 0.2s;
+      &:hover { transform: translateY(-2px); background-color: darken($primary-color, 5%); }
+    }
+  }
+}
+
+// --- Cards de Estatísticas ---
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.statCard {
+  background: $bg-white;
+  padding: 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+  border: 1px solid rgba(0,0,0,0.03);
+  transition: transform 0.2s;
+  &:hover { transform: translateY(-3px); }
+
+  .statHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+
+    .statTitle { color: $text-gray; font-size: 0.9rem; font-weight: 500; }
+    
+    .iconWrapper {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      
+      &.orange { background-color: $primary-light; color: $primary-color; }
+      &.blue { background-color: #e0f2fe; color: #0ea5e9; }
+      &.red { background-color: #fee2e2; color: $red; }
+      &.green { background-color: #dcfce7; color: $green; }
+    }
+  }
+
+  .statBody { margin-bottom: 0.8rem; }
+  .statValue { font-size: 1.8rem; font-weight: 700; color: $text-dark; }
+
+  .statFooter {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+
+    .trendUp { color: $green; display: flex; align-items: center; gap: 4px; font-weight: 600; }
+    .trendDown { color: $red; display: flex; align-items: center; gap: 4px; font-weight: 600; }
+    .statLabel { color: $text-gray; }
+  }
+}
+
+// --- Cards Gerais e Gráficos ---
+.chartsGrid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+
+  @media (max-width: 1024px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.card {
+  background: $bg-white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+  border: 1px solid rgba(0,0,0,0.03);
+
+  .cardHeader {
+    margin-bottom: 1.5rem;
+    h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 4px; }
+    p { color: $text-gray; font-size: 0.85rem; }
+  }
+
+  .chartContainer {
+    margin-left: -10px; // Ajuste fino para Recharts
+  }
+}
+
+// --- Tabela ---
+.tableResponsive {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  
+  th {
+    text-align: left;
+    padding: 12px 16px;
+    color: $text-gray;
+    font-size: 0.85rem;
+    font-weight: 600;
+    border-bottom: 1px solid $border-light;
+  }
+
+  td {
+    padding: 16px;
+    font-size: 0.95rem;
+    border-bottom: 1px solid $border-light;
+    color: $text-dark;
+  }
+
+  tr:last-child td { border-bottom: none; }
+
+  .productCell { font-weight: 600; }
+  .valueCell { font-family: monospace; font-weight: 600; color: $text-dark; }
+  .dateCell { color: $text-gray; font-size: 0.85rem; }
+
+  .statusBadge {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+
+    &.concluído { background-color: #dcfce7; color: $green; }
+    &.pendente { background-color: $primary-light; color: $primary-color; }
+    &.cancelado { background-color: #fee2e2; color: $red; }
+  }
+}
+
+// --- Responsividade Global ---
+@media (max-width: 768px) {
+  .layout { flex-direction: column; }
+  .sidebar { 
+    width: 100%; 
+    height: auto; 
+    padding: 1rem;
+    flex-direction: row; 
+    align-items: center;
+    border-bottom: 1px solid $border-light;
+    
+    .nav, .sidebarFooter, .logoContainer { display: none; } // Simplificado para exemplo
+    .logoContainer { display: block; margin-bottom: 0; }
+  }
+  
+  .topbar { padding: 0 1rem; }
+  .searchWrapper { display: none; } // Esconde busca em mobile
+  .content { padding: 1rem; }
+}

@@ -1,0 +1,186 @@
+$primary-color: #E88C22;
+$secondary-color: #8B1C1C;
+$bg-body: #f4f7f6;
+$bg-white: #ffffff;
+$text-dark: #1a1a1a;
+$text-gray: #64748b;
+$border-light: #e2e8f0;
+$green: #10b981;
+
+.layout {
+  display: flex;
+  min-height: 100vh;
+  background-color: $bg-body;
+  font-family: 'Poppins', sans-serif;
+  color: $text-dark;
+}
+
+// --- SIDEBAR (Padrão) ---
+.sidebar {
+  width: 240px;
+  background: $bg-white;
+  border-right: 1px solid $border-light;
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem;
+  flex-shrink: 0;
+  
+  @media (max-width: 768px) { display: none; }
+
+  .logoContainer { margin-bottom: 2rem; .logo { color: $primary-color; font-weight: 800; font-size: 1.4rem; } }
+  .nav { flex: 1; display: flex; flex-direction: column; gap: 0.5rem; }
+  .navItem {
+    display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 8px;
+    color: $text-gray; text-decoration: none; font-weight: 500;
+    &:hover, &.active { background-color: lighten($primary-color, 40%); color: $primary-color; }
+  }
+  .logoutBtn {
+    background: none; border: none; display: flex; align-items: center; gap: 12px;
+    color: $text-gray; cursor: pointer; padding: 12px; width: 100%; font-weight: 500;
+    &:hover { color: $secondary-color; }
+  }
+}
+
+// --- CONTEÚDO PRINCIPAL ---
+.content {
+  flex: 1;
+  padding: 2rem;
+  overflow-y: auto;
+}
+
+.pageHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  .title { font-size: 1.8rem; font-weight: 700; margin-bottom: 4px; }
+  .subtitle { color: $text-gray; font-size: 0.9rem; }
+  
+  .btnAdd {
+    background-color: $primary-color; color: white; border: none;
+    padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer;
+    display: flex; align-items: center; gap: 8px;
+    &:hover { background-color: darken($primary-color, 5%); }
+  }
+}
+
+// --- STAT CARDS ---
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+.statCard {
+  background: $bg-white; padding: 1.5rem; border-radius: 12px;
+  display: flex; justify-content: space-between; align-items: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+  
+  .statInfo { display: flex; flex-direction: column; gap: 4px; span { color: $text-gray; font-size: 0.9rem; } strong { font-size: 1.5rem; } }
+  .iconWrapper { 
+    width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center;
+    &.green { background: #dcfce7; color: $green; }
+    &.orange { background: #ffedd5; color: $primary-color; }
+  }
+}
+
+// --- TABELA E FILTROS ---
+.tableCard {
+  background: $bg-white; border-radius: 12px; padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+}
+
+.filters {
+  display: flex; gap: 1rem; margin-bottom: 1.5rem;
+  
+  .searchBox {
+    position: relative; flex: 1;
+    .searchIcon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: $text-gray; }
+    input {
+      width: 100%; padding: 10px 10px 10px 40px; border: 1px solid $border-light; border-radius: 8px; outline: none;
+      &:focus { border-color: $primary-color; }
+    }
+  }
+  .selectFilter {
+    padding: 10px; border: 1px solid $border-light; border-radius: 8px; outline: none;
+  }
+}
+
+.table {
+  width: 100%; border-collapse: collapse;
+  th { text-align: left; padding: 12px; color: $text-gray; font-size: 0.85rem; border-bottom: 1px solid $border-light; }
+  td { padding: 14px 12px; font-size: 0.95rem; border-bottom: 1px solid #f1f5f9; }
+  
+  .clientName { font-weight: 600; }
+  .totalValue { font-family: monospace; font-weight: 700; color: $secondary-color; }
+  
+  .badge { background: #f1f5f9; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; color: $text-gray; }
+  .statusBadge {
+    padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase;
+    &.concluída { background: #dcfce7; color: $green; }
+    &.pendente { background: #ffedd5; color: $primary-color; }
+  }
+  
+  .actionBtn {
+    background: none; border: none; cursor: pointer; color: $text-gray;
+    &:hover { color: $primary-color; }
+  }
+}
+
+// --- MODAL (Customizado sem biblioteca) ---
+.modalOverlay {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;
+}
+
+.modal {
+  background: $bg-white; width: 400px; border-radius: 12px; padding: 1.5rem;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1); animation: slideUp 0.3s ease;
+  
+  &.modalLarge { width: 600px; }
+
+  .modalHeader {
+    display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;
+    h3 { font-size: 1.2rem; font-weight: 700; }
+    button { background: none; border: none; cursor: pointer; color: $text-gray; }
+  }
+
+  .modalBody {
+    p { margin-bottom: 8px; color: $text-dark; strong { color: $text-gray; } }
+    .divider { height: 1px; background: $border-light; margin: 1rem 0; }
+    .productList { 
+      list-style: none; padding: 0; margin: 0;
+      li { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px dashed $border-light; font-size: 0.9rem; }
+    }
+    .modalTotal { margin-top: 1rem; display: flex; justify-content: space-between; font-weight: 700; font-size: 1.1rem; color: $secondary-color; }
+  }
+}
+
+// --- FORMULÁRIO DENTRO DO MODAL ---
+.form {
+  .formRow { display: flex; gap: 1rem; margin-bottom: 1rem; }
+  .formGroup {
+    flex: 1; display: flex; flex-direction: column; gap: 6px;
+    label { font-size: 0.85rem; font-weight: 500; color: $text-gray; }
+    input, select { padding: 10px; border: 1px solid $border-light; border-radius: 6px; outline: none; &:focus { border-color: $primary-color; } }
+  }
+
+  .itemsSection {
+    background: #f8fafc; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;
+    .itemsHeader { display: flex; justify-content: space-between; margin-bottom: 10px; label { font-weight: 600; } }
+    .itemRow { display: flex; gap: 10px; margin-bottom: 8px; select { flex: 1; } }
+    .btnSmall { background: none; border: 1px solid $primary-color; color: $primary-color; border-radius: 4px; padding: 2px 8px; cursor: pointer; display: flex; align-items: center; gap: 4px; font-size: 0.8rem; }
+    .btnDelete { background: #fee2e2; border: none; color: #ef4444; padding: 8px; border-radius: 4px; cursor: pointer; }
+  }
+
+  .modalFooter {
+    display: flex; justify-content: space-between; align-items: center;
+    .totalPreview { font-weight: 700; color: $text-dark; }
+    .btnSubmit { background: $primary-color; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; &:hover { background: darken($primary-color, 5%); } }
+  }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}

@@ -1,6 +1,9 @@
 import { useState } from "react";
 import s from '../login/login.module.scss';
 import imgCadastro from '../../Assests/img-login.png';
+import { Link } from "react-router-dom"; 
+
+
 
 export default function Cadastro() {
   const [nome, setNome] = useState("");
@@ -18,11 +21,11 @@ export default function Cadastro() {
 
   return (
     <main className={s.container}>
-            <section className={s.loginSection}>
+      <section className={s.loginSection}>
         <h1 className={s.loginTitle}>Crie sua Conta</h1>
-        
+
         <form className={s.loginForm} onSubmit={handleRegister}>
-          
+
           <div className={s.inputGroup}>
             <label htmlFor="nome">Nome Completo</label>
             <input
@@ -65,12 +68,16 @@ export default function Cadastro() {
             className={s.buttonLogin}
           />
         </form>
-        
+
+        <p className={s.signupLink}>
+            <Link to="/">Voltar</Link>
+        </p>
+
       </section>
 
-       <section className={s.illustrationSection}>
-           <img src={imgCadastro} alt="Ilustração do Cadastro" />      
-          </section>
+      <section className={s.illustrationSection}>
+        <img src={imgCadastro} alt="Ilustração do Cadastro" />
+      </section>
     </main>
   );
 }
