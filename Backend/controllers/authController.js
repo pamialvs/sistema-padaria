@@ -27,8 +27,15 @@ exports.login = async (req, res) => {
   const correctPass = await bcrypt.compare(password, user.password);
   if (!correctPass) return res.status(401).json({ message: "Senha incorreta!" });
 
-  const token = jwt.sign({ email }, SECRET, { expiresIn: "2h" });
+  const token = jwt.sign(
+    { email: user.email, username: user.username }, // 🔥 nome incluído no token
+    SECRET,
+    { expiresIn: "2h" }
+  );
 
-  res.json({ message: "Login efetuado com sucesso!", token });
+  res.json({
+    message: "Login efetuado com sucesso!",
+    token,
+    username: user.username // 🔥 devolvendo o nome pro front também
+  });
 };
-

@@ -1,23 +1,43 @@
 import { useState } from "react";
 import s from './login.module.scss';
 import imgLogin from '../../Assests/img-login.png';
-import { Link } from "react-router-dom"; 
+import { Link, useNavigate } from "react-router-dom"; 
 
 export default function Login() {
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    // Aqui entra a lógica backend
-    console.log("Email:", email);
-    console.log("Senha:", senha);
-    alert("Login enviado!");
-  };
+ const handleLogin = async (e) => {
+  e.preventDefault();
+
+  try {
+    const response = await fetch("http://localhost:3000/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email, password: senha }),
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      alert("Login realizado!");
+      window.location.href = "/dashboard";
+    } else {
+      alert(data.message || "Erro ao fazer login");
+    }
+
+  } catch (err) {
+    alert("Erro de conexão com o servidor");
+    console.error(err);
+  }
+};
+
 
   return (
     <main className={s.container}>
-      
       <section className={s.loginSection}>
         <h1 className={s.loginTitle}>Faça seu Login</h1>
         
@@ -53,14 +73,14 @@ export default function Login() {
             className={s.buttonLogin}
           />
         </form>
+
         <p className={s.signupLink}>
-            <Link to="/cadastro">Crie agora</Link>
+          <Link to="/cadastro">Crie agora</Link>
         </p>
-        
       </section>
 
       <section className={s.illustrationSection}>
-       <img src={imgLogin} alt="Ilustração" />   
+        <img src={imgLogin} alt="Ilustração" />   
       </section>
     </main>
   );

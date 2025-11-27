@@ -11,13 +11,29 @@ export default function Cadastro() {
   const [senha, setSenha] = useState("");
 
   const handleRegister = async (e) => {
-    e.preventDefault();
-    // Lógica do back 
-    alert(`Cadastro realizado com sucesso!`);
-    console.log("Nome:", nome);
-    console.log("Email:", email);
-    console.log("Senha:", senha);
-  };
+  e.preventDefault();
+
+  try {
+    const response = await fetch("http://localhost:3000/register", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        username: nome,
+        email: email,
+        password: senha
+      }),
+    });
+
+    const data = await response.json();
+    alert(data.message);
+
+  } catch (error) {
+    console.error(error);
+    alert("Erro no cadastro!");
+  }
+};
 
   return (
     <main className={s.container}>
