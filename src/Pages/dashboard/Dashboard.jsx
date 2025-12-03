@@ -101,20 +101,7 @@ export default function Dashboard() {
       <div className={s.mainWrapper}>
         
         {/* Topbar */}
-        <header className={s.topbar}>
-          <div className={s.searchWrapper}>
-            <Search className={s.searchIcon} size={20} />
-            <input type="text" placeholder="Buscar..." className={s.searchInput} />
-          </div>
-          <div className={s.profileWrapper}>
-            <button className={s.iconBtn}><Bell size={20} /></button>
-            <div className={s.userProfile}>
-              <div className={s.avatar}>PF</div>
-              <span>Pâmela Fernandes</span>
-              <ChevronDown size={16} />
-            </div>
-          </div>
-        </header>
+        
 
         {/* Dashboard Content */}
         <main className={s.content}>
