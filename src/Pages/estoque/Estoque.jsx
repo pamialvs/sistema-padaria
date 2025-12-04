@@ -147,8 +147,8 @@ export default function GerenciarEstoque() {
                 <nav className={s.nav}>
                     <a href="/dashboard" className={s.navItem}><LayoutDashboard size={20}/> <span>Dashboard</span></a>
                     <a href="/vendas" className={s.navItem}><ShoppingCart size={20}/> <span>Vendas</span></a>
-                    <a href="#" className={`${s.navItem} ${s.active}`}><Package size={20}/> <span>Estoque</span></a>
-                    <a href="#" className={s.navItem}><Users size={20}/> <span>Clientes</span></a>
+                    <a href="/estoque" className={`${s.navItem} ${s.active}`}><Package size={20}/> <span>Estoque</span></a>
+                    <a href="/clientes" className={s.navItem}><Users size={20}/> <span>Clientes</span></a>
                     <a href="#" className={s.navItem}><FileText size={20}/> <span>Relatórios</span></a>
                 </nav>
                 <div className={s.sidebarFooter}>

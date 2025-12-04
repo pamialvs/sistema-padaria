@@ -1,0 +1,183 @@
+$primary-color: #E88C22;
+$secondary-color: #8B1C1C;
+$bg-body: #f4f7f6;
+$bg-white: #ffffff;
+$text-dark: #1a1a1a;
+$text-gray: #64748b;
+$border-light: #e2e8f0;
+
+.layout {
+  display: flex;
+  min-height: 100vh;
+  background-color: $bg-body;
+  font-family: 'Poppins', sans-serif;
+  color: $text-dark;
+}
+
+// --- SIDEBAR (Reutilizável) ---
+.sidebar {
+  width: 240px;
+  background: $bg-white;
+  border-right: 1px solid $border-light;
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem;
+  flex-shrink: 0;
+  
+  @media (max-width: 768px) { display: none; }
+
+  .logoContainer { margin-bottom: 2rem; .logo { color: $primary-color; font-weight: 800; font-size: 1.4rem; } }
+  .nav { flex: 1; display: flex; flex-direction: column; gap: 0.5rem; }
+  .navItem {
+    display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 8px;
+    color: $text-gray; text-decoration: none; font-weight: 500;
+    &:hover, &.active { background-color: lighten($primary-color, 40%); color: $primary-color; }
+  }
+  .logoutBtn {
+    background: none; border: none; display: flex; align-items: center; gap: 12px;
+    color: $text-gray; cursor: pointer; padding: 12px; width: 100%; font-weight: 500;
+    &:hover { color: $secondary-color; }
+  }
+}
+
+// --- CONTEÚDO ---
+.content {
+  flex: 1;
+  padding: 2rem;
+  overflow-y: auto;
+}
+
+.pageHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  
+  .title { font-size: 1.8rem; font-weight: 700; margin-bottom: 4px; }
+  .subtitle { color: $text-gray; font-size: 0.9rem; }
+  
+  .btnAdd {
+    background-color: $primary-color;
+    color: white; border: none;
+    padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer;
+    display: flex; align-items: center; gap: 8px;
+    box-shadow: 0 4px 10px rgba($primary-color, 0.3);
+    &:hover { background-color: darken($primary-color, 5%); }
+  }
+}
+
+// --- STATS ---
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+.statCard {
+  background: $bg-white; padding: 1.5rem; border-radius: 12px;
+  display: flex; justify-content: space-between; align-items: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+  
+  .statInfo { display: flex; flex-direction: column; gap: 4px; span { color: $text-gray; font-size: 0.9rem; } strong { font-size: 1.5rem; } }
+  .iconWrapper { 
+    width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center;
+    &.blue { background: #dbeafe; color: #3b82f6; }
+    &.gold { background: #fef3c7; color: #d97706; }
+  }
+}
+
+// --- TABELA E TOOLBAR ---
+.mainCard {
+  background: $bg-white; border-radius: 12px; padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+}
+
+.toolbar {
+  margin-bottom: 1.5rem;
+  .searchBox {
+    position: relative; max-width: 400px;
+    .searchIcon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: $text-gray; }
+    input {
+      width: 100%; padding: 10px 10px 10px 40px; border: 1px solid $border-light; border-radius: 8px; outline: none;
+      &:focus { border-color: $primary-color; }
+    }
+  }
+}
+
+.table {
+  width: 100%; border-collapse: collapse;
+  th { text-align: left; padding: 12px; color: $text-gray; font-size: 0.85rem; border-bottom: 1px solid $border-light; }
+  td { padding: 14px 12px; font-size: 0.95rem; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+  
+  .userInfo {
+    display: flex; align-items: center; gap: 10px;
+    .avatar { width: 36px; height: 36px; background: #f1f5f9; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; color: $secondary-color; }
+    .userName { font-weight: 600; color: $text-dark; margin: 0; }
+    .userEmail { font-size: 0.8rem; color: $text-gray; margin: 0; }
+  }
+
+  .contactInfo, .addressCell { display: flex; align-items: center; gap: 6px; color: $text-gray; font-size: 0.9rem; }
+  .iconSmall { color: $primary-color; }
+  
+  .centerAlign { text-align: center; }
+  .comprasBadge { background: #f1f5f9; padding: 2px 8px; border-radius: 12px; font-weight: 600; font-size: 0.85rem; }
+
+  .statusBadge {
+    padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase;
+    &.ativo { background: #dcfce7; color: #166534; }
+    &.inativo { background: #f1f5f9; color: $text-gray; }
+    &.vip { background: #fef3c7; color: #b45309; }
+  }
+
+  .actions {
+    display: flex; gap: 8px;
+    .actionBtn {
+      background: #f8fafc; border: 1px solid $border-light; width: 32px; height: 32px; border-radius: 6px;
+      display: flex; align-items: center; justify-content: center; cursor: pointer; color: $text-gray; transition: 0.2s;
+      
+      &:hover { border-color: $primary-color; color: $primary-color; }
+      &.delete:hover { border-color: #ef4444; color: #ef4444; background: #fee2e2; }
+    }
+  }
+}
+
+// --- MODAL ---
+.modalOverlay {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;
+}
+
+.modal {
+  background: $bg-white; width: 500px; border-radius: 12px; padding: 1.5rem;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1); animation: slideUp 0.3s ease;
+
+  .modalHeader {
+    display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;
+    h3 { font-size: 1.2rem; font-weight: 700; }
+    button { background: none; border: none; cursor: pointer; color: $text-gray; }
+  }
+
+  .form {
+    .formRow { display: flex; gap: 1rem; }
+    .formGroup {
+      flex: 1; display: flex; flex-direction: column; gap: 6px; margin-bottom: 1rem;
+      label { font-size: 0.85rem; font-weight: 500; color: $text-gray; }
+      input { padding: 10px; border: 1px solid $border-light; border-radius: 6px; outline: none; &:focus { border-color: $primary-color; } }
+    }
+
+    .btnSubmit {
+      width: 100%; background: $secondary-color; color: white; border: none; padding: 12px; 
+      border-radius: 8px; font-weight: 600; cursor: pointer; margin-top: 1rem;
+      &:hover { background: darken($secondary-color, 5%); }
+    }
+  }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@media (max-width: 768px) {
+  .tableResponsive { overflow-x: auto; }
+}
