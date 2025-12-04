@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   TrendingUp, 
@@ -33,7 +33,7 @@ import {
 
 import s from './dashboard.module.scss';
 
-// --- DADOS MOCKADOS ---
+// --- DADOS MOCKADOS (Ainda usados para gráficos) ---
 const salesData = [
   { name: "Seg", vendas: 4200 },
   { name: "Ter", vendas: 3800 },
@@ -66,6 +66,9 @@ export default function Dashboard() {
   // --- ESTADO PARA CONTROLAR O MENU ---
   const [showUserMenu, setShowUserMenu] = useState(false);
 
+  // --- ESTADO PARA DADOS REAIS DO BANCO (BI) ---
+  const [vendasHoje, setVendasHoje] = useState(0);
+
   // ============================================================
   // === TÓPICO 2: LEITURA DO TOKEN JWT DO USUÁRIO LOGADO     ===
   // ============================================================
@@ -87,13 +90,28 @@ export default function Dashboard() {
     ? user.username.split(" ").map(n => n[0]).join("").toUpperCase()
     : "??";
 
-  // --- FUNÇÃO DE LOGOUT ALTERADA ---
+  // ============================================================
+  // === BUSCAR DADOS DO BACKEND (TÓPICO 4: BI REAL)          ===
+  // ============================================================
+  useEffect(() => {
+    async function fetchDashboardData() {
+      try {
+        const response = await fetch('http://localhost:3000/dashboard/resumo');
+        const data = await response.json();
+        
+        // Atualiza o estado com o valor real vindo do PostgreSQL
+        setVendasHoje(data.vendasHoje); 
+      } catch (error) {
+        console.error("Erro ao carregar dashboard:", error);
+      }
+    }
+
+    fetchDashboardData();
+  }, []);
+
+  // --- FUNÇÃO DE LOGOUT ---
   const handleLogout = () => {
-    // 1. Remove o token
     localStorage.removeItem('authToken');
-    
-    // 2. Redireciona forçadamente para a URL base (http://localhost:5173)
-    // Usar window.location.href é melhor aqui para garantir que a página recarregue do zero.
     window.location.href = 'http://localhost:5173';
   };
 
@@ -125,7 +143,6 @@ export default function Dashboard() {
         </nav>
 
         <div className={s.sidebarFooter}>
-          {/* Botão Sair da Sidebar (lateral) também atualizado */}
           <button onClick={handleLogout} className={s.logoutBtn}>
             <LogOut size={20} /> <span>Sair</span>
           </button>
@@ -202,7 +219,6 @@ export default function Dashboard() {
 
                   <div style={{ height: '1px', background: '#f3f4f6', margin: '4px 0' }} />
 
-                  {/* BOTÃO SAIR DO DROPDOWN */}
                   <button 
                     onClick={handleLogout}
                     style={{
@@ -243,14 +259,18 @@ export default function Dashboard() {
 
           {/* STATS GRID */}
           <div className={s.statsGrid}>
+            
+            {/* --- CARD ATUALIZADO COM DADOS REAIS --- */}
             <StatCard 
               title="Vendas do Dia" 
-              value="R$ 1.247,50" 
+              value={vendasHoje.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} 
               trend="+12%" 
               trendUp={true} 
               icon={DollarSign} 
               color="orange"
             />
+            {/* -------------------------------------- */}
+
             <StatCard 
               title="Produtos Vendidos" 
               value="342" 

@@ -7,7 +7,8 @@ const colaboradorRoutes = require("./routes/colaboradorRoutes");
 const produtoRoutes = require("./routes/produtoRoutes");  
 const fornecedorRoutes = require("./routes/fornecedorRoutes");
 const estoqueRoutes = require("./routes/estoqueRoutes");
-const vendaRoutes = require("./routes/vendaRoutes"); // NOVO
+const vendaRoutes = require("./routes/vendaRoutes"); 
+const dashboardRoutes = require("./routes/dashboardRoutes");
 
 const app = express();
 const PORT = 3000;
@@ -23,7 +24,8 @@ app.use("/colaboradores", colaboradorRoutes);
 app.use("/produtos", produtoRoutes);    
 app.use("/fornecedores", fornecedorRoutes);
 app.use("/estoque", estoqueRoutes);
-app.use("/vendas", vendaRoutes); // NOVO: http://localhost:3000/vendas
+app.use("/vendas", vendaRoutes); 
+app.use("/dashboard", dashboardRoutes);
 
 app.listen(PORT, () => {
     console.log(`✅ Backend rodando na porta ${PORT}`);
