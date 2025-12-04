@@ -1,10 +1,10 @@
-// Arquivo: Backend/controllers/produtoController.js
+
 const repo = require('../repositories/produtoRepository');
 
 async function cadastrar(req, res) {
     const dados = req.body;
 
-    // Validação: Nome é obrigatório (NOT NULL no banco) [cite: 70]
+    
     if (!dados.nome) {
         return res.status(400).json({ erro: "Nome do produto é obrigatório." });
     }

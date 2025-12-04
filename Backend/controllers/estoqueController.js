@@ -1,10 +1,10 @@
-// Arquivo: Backend/controllers/estoqueController.js
+
 const repo = require('../repositories/estoqueRepository');
 
 async function cadastrar(req, res) {
     const dados = req.body;
 
-    // Validação: Nome e Fornecedor são obrigatórios [cite: 76, 80]
+   
     if (!dados.nome || !dados.idFornecedor) {
         return res.status(400).json({ erro: "Nome do item e ID do Fornecedor são obrigatórios." });
     }
@@ -14,7 +14,7 @@ async function cadastrar(req, res) {
         res.status(201).json(itemCriado);
     } catch (erro) {
         console.error(erro);
-        // Dica: Erro 23503 no Postgres é violação de FK (Fornecedor não existe)
+ 
         if (erro.code === '23503') {
             return res.status(400).json({ erro: "O Fornecedor ou Produto informado não existe." });
         }

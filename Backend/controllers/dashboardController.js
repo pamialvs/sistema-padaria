@@ -2,7 +2,7 @@ const repo = require('../repositories/dashboardRepository');
 
 async function getDashboardFull(req, res) {
     try {
-        // Executa tudo em paralelo para ser rápido
+       
         const [vendasHoje, graficoVendas, graficoProdutos, transacoes] = await Promise.all([
             repo.getVendasHoje(),
             repo.getGraficoVendas(),
