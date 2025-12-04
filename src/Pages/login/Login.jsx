@@ -45,9 +45,9 @@ export default function Login() {
     <main className={s.container}>
       <section className={s.loginSection}>
         <h1 className={s.loginTitle}>Faça seu Login</h1>
-        
+
         <form className={s.loginForm} onSubmit={handleLogin}>
-          
+
           <div className={s.inputGroup}>
             <label htmlFor="email">E-mail</label>
             <input
