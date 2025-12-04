@@ -1,15 +1,25 @@
 const repo = require('../repositories/dashboardRepository');
 
-async function getResumo(req, res) {
+async function getDashboardFull(req, res) {
     try {
-        const totalHoje = await repo.getVendasHoje();
-        res.json({ 
-            vendasHoje: parseFloat(totalHoje) // Garante que seja número
+        // Executa tudo em paralelo para ser rápido
+        const [vendasHoje, graficoVendas, graficoProdutos, transacoes] = await Promise.all([
+            repo.getVendasHoje(),
+            repo.getGraficoVendas(),
+            repo.getTopProdutos(),
+            repo.getTransacoesRecentes()
+        ]);
+
+        res.json({
+            vendasHoje: parseFloat(vendasHoje),
+            graficoVendas,
+            graficoProdutos,
+            transacoes
         });
     } catch (erro) {
         console.error(erro);
-        res.status(500).json({ erro: "Erro ao calcular dashboard" });
+        res.status(500).json({ erro: "Erro no dashboard" });
     }
 }
 
-module.exports = { getResumo };
+module.exports = { getDashboardFull };

@@ -1,147 +1,86 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  TrendingUp, 
-  Package, 
-  ShoppingCart, 
-  DollarSign, 
-  Menu, 
-  Bell, 
-  Search, 
-  ChevronDown,
-  LogOut,
-  LayoutDashboard,
-  FileText,
-  Users,
-  Settings
+  TrendingUp, Package, ShoppingCart, DollarSign, 
+  Bell, Search, ChevronDown, LogOut, 
+  LayoutDashboard, FileText, Users, Settings 
 } from "lucide-react";
-
 import { jwtDecode } from "jwt-decode";
-
 import { 
-  LineChart, 
-  Line, 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  Legend, 
-  ResponsiveContainer 
+  LineChart, Line, BarChart, Bar, XAxis, YAxis, 
+  CartesianGrid, Tooltip, ResponsiveContainer 
 } from "recharts";
 
+// Importa o teu SCSS original
 import s from './dashboard.module.scss';
-
-// --- DADOS MOCKADOS (Ainda usados para gráficos) ---
-const salesData = [
-  { name: "Seg", vendas: 4200 },
-  { name: "Ter", vendas: 3800 },
-  { name: "Qua", vendas: 5100 },
-  { name: "Qui", vendas: 4600 },
-  { name: "Sex", vendas: 6200 },
-  { name: "Sáb", vendas: 8100 },
-  { name: "Dom", vendas: 7200 },
-];
-
-const productsData = [
-  { name: "Pão Francês", quantidade: 450 },
-  { name: "Pão Forma", quantidade: 320 },
-  { name: "Croissant", quantidade: 280 },
-  { name: "Bolo Choc.", quantidade: 190 },
-  { name: "Sonho", quantidade: 150 },
-];
-
-const recentTransactions = [
-  { id: 1, produto: "Pão Francês", quantidade: 10, valor: "R$ 35,00", data: "24/11/2025 09:30", status: "Concluído" },
-  { id: 2, produto: "Croissant", quantidade: 5, valor: "R$ 25,00", data: "24/11/2025 10:15", status: "Pendente" },
-  { id: 3, produto: "Bolo de Chocolate", quantidade: 1, valor: "R$ 45,00", data: "24/11/2025 11:00", status: "Concluído" },
-  { id: 4, produto: "Pão de Forma", quantidade: 3, valor: "R$ 21,00", data: "24/11/2025 11:45", status: "Concluído" },
-  { id: 5, produto: "Sonho", quantidade: 8, valor: "R$ 32,00", data: "24/11/2025 12:20", status: "Cancelado" },
-];
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  
-  // --- ESTADO PARA CONTROLAR O MENU ---
   const [showUserMenu, setShowUserMenu] = useState(false);
+  
+  // --- ESTADO DE DADOS (Conectado ao Banco) ---
+  const [dashboardData, setDashboardData] = useState({
+    vendasHoje: 0,
+    graficoVendas: [],    // Ex: [{dia: '04/12', total: 150.00}]
+    graficoProdutos: [],  // Ex: [{name: 'Pão', quantidade: 10}]
+    transacoes: []        // Lista das últimas vendas
+  });
 
-  // --- ESTADO PARA DADOS REAIS DO BANCO (BI) ---
-  const [vendasHoje, setVendasHoje] = useState(0);
-
-  // ============================================================
-  // === TÓPICO 2: LEITURA DO TOKEN JWT DO USUÁRIO LOGADO     ===
-  // ============================================================
+  // --- LEITURA DO TOKEN ---
   const token = localStorage.getItem("authToken");
   let user = null;
-
   if (token) {
-    try {
-      user = jwtDecode(token);
-    } catch (error) {
-      console.error("Erro ao decodificar token:", error);
-    }
+    try { user = jwtDecode(token); } catch (e) { console.error("Token inválido"); }
   }
+  // Iniciais do Usuário (Ex: "PA" para Pâmela Alves)
+  const initials = user?.username 
+    ? user.username.split(" ").slice(0,2).map(n => n[0]).join("").toUpperCase() 
+    : "US";
 
-  // ======================================================================
-  // === TÓPICO 3: GERAÇÃO AUTOMÁTICA DAS INICIAIS DO NOME DO USUÁRIO   ===
-  // ======================================================================
-  const initials = user?.username
-    ? user.username.split(" ").map(n => n[0]).join("").toUpperCase()
-    : "??";
-
-  // ============================================================
-  // === BUSCAR DADOS DO BACKEND (TÓPICO 4: BI REAL)          ===
-  // ============================================================
+  // --- BUSCAR DADOS REAIS DO BACKEND ---
   useEffect(() => {
-    async function fetchDashboardData() {
+    async function fetchDashboard() {
       try {
-        const response = await fetch('http://localhost:3000/dashboard/resumo');
-        const data = await response.json();
-        
-        // Atualiza o estado com o valor real vindo do PostgreSQL
-        setVendasHoje(data.vendasHoje); 
-      } catch (error) {
-        console.error("Erro ao carregar dashboard:", error);
+        const res = await fetch('http://localhost:3000/dashboard/full');
+        const data = await res.json();
+        setDashboardData(data);
+      } catch (err) {
+        console.error("Erro ao carregar dashboard:", err);
       }
     }
-
-    fetchDashboardData();
+    fetchDashboard();
   }, []);
 
-  // --- FUNÇÃO DE LOGOUT ---
   const handleLogout = () => {
     localStorage.removeItem('authToken');
-    window.location.href = 'http://localhost:5173';
+    window.location.href = '/';
   };
 
   return (
     <div className={s.layout}>
       
-      {/* --- SIDEBAR --- */}
+      {/* --- SIDEBAR (Igual ao original) --- */}
       <aside className={s.sidebar}>
         <div className={s.logoContainer}>
           <h1 className={s.logo}>PÃO DOURADO</h1>
         </div>
-        
         <nav className={s.nav}>
-          <a href="dashboard" className={`${s.navItem} ${s.active}`}>
+          <a href="/dashboard" className={`${s.navItem} ${s.active}`}>
             <LayoutDashboard size={20} /> <span>Dashboard</span>
           </a>
-          <a href="vendas" className={s.navItem}>
+          <a href="/vendas" className={s.navItem}>
             <ShoppingCart size={20} /> <span>Vendas</span>
           </a>
-          <a href="estoque" className={s.navItem}>
+          <a href="/estoque" className={s.navItem}>
             <Package size={20} /> <span>Estoque</span>
           </a>
-          <a href="clientes" className={s.navItem}>
+          <a href="/clientes" className={s.navItem}>
             <Users size={20} /> <span>Clientes</span>
           </a>
-          <a href="#" className={s.navItem}>
+          <a href="/relatorios" className={s.navItem}>
             <FileText size={20} /> <span>Relatórios</span>
           </a>
         </nav>
-
         <div className={s.sidebarFooter}>
           <button onClick={handleLogout} className={s.logoutBtn}>
             <LogOut size={20} /> <span>Sair</span>
@@ -149,10 +88,10 @@ export default function Dashboard() {
         </div>
       </aside>
 
-      {/* --- MAIN CONTENT --- */}
+      {/* --- MAIN CONTENT WRAPPER --- */}
       <div className={s.mainWrapper}>
         
-        {/* Topbar */}
+        {/* TOPBAR */}
         <header className={s.topbar}>
           <div className={s.searchWrapper}>
             <Search className={s.searchIcon} size={20} />
@@ -161,194 +100,126 @@ export default function Dashboard() {
 
           <div className={s.profileWrapper}>
             <button className={s.iconBtn}><Bell size={20} /></button>
-
-            {/* === MENU DROPDOWN DO USUÁRIO === */}
+            
+            {/* Dropdown de Usuário */}
             <div 
               className={s.userProfile}
-              style={{ position: 'relative', cursor: 'pointer', userSelect: 'none' }}
               onClick={() => setShowUserMenu(!showUserMenu)}
+              style={{position: 'relative'}} // Ajuste inline para o dropdown funcionar
             >
               <div className={s.avatar}>{initials}</div>
-              <span>{user?.username || "Usuário"}</span>
-              
-              <ChevronDown 
-                size={16} 
-                style={{ transform: showUserMenu ? 'rotate(180deg)' : 'rotate(0deg)', transition: '0.2s' }}
-              />
+              <span>{user?.username || "Visitante"}</span>
+              <ChevronDown size={16} />
 
+              {/* Menu Flutuante */}
               {showUserMenu && (
                 <div style={{
-                  position: 'absolute',
-                  top: '120%', 
-                  right: 0,
-                  backgroundColor: 'white',
-                  border: '1px solid #e5e7eb',
-                  borderRadius: '8px',
-                  boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
-                  width: '180px',
-                  padding: '6px',
-                  zIndex: 100,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '2px'
-                }}
-                onClick={(e) => e.stopPropagation()} 
-                >
-                  <button 
-                    onClick={() => navigate('/configuracoes')} 
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '10px',
-                      padding: '10px',
-                      border: 'none',
-                      background: 'white',
-                      cursor: 'pointer',
-                      fontSize: '14px',
-                      color: '#374151',
-                      width: '100%',
-                      borderRadius: '4px',
-                      textAlign: 'left',
-                      transition: 'background 0.2s'
-                    }}
-                    onMouseEnter={(e) => e.currentTarget.style.background = '#f3f4f6'}
-                    onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
-                  >
-                    <Settings size={16} /> Configuração
-                  </button>
-
-                  <div style={{ height: '1px', background: '#f3f4f6', margin: '4px 0' }} />
-
-                  <button 
-                    onClick={handleLogout}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '10px',
-                      padding: '10px',
-                      border: 'none',
-                      background: 'white',
-                      cursor: 'pointer',
-                      fontSize: '14px',
-                      color: '#ef4444',
-                      width: '100%',
-                      borderRadius: '4px',
-                      textAlign: 'left',
-                      transition: 'background 0.2s'
-                    }}
-                    onMouseEnter={(e) => e.currentTarget.style.background = '#fee2e2'}
-                    onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
-                  >
-                    <LogOut size={16} /> Sair
-                  </button>
+                  position: 'absolute', top: '120%', right: 0,
+                  background: 'white', border: '1px solid #e2e8f0',
+                  borderRadius: '8px', padding: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                  width: '160px', zIndex: 100
+                }}>
+                   <button onClick={handleLogout} style={{
+                     display: 'flex', alignItems: 'center', gap: '8px',
+                     width: '100%', padding: '8px', border: 'none',
+                     background: 'transparent', cursor: 'pointer', color: '#ef4444'
+                   }}>
+                     <LogOut size={16}/> Sair
+                   </button>
                 </div>
               )}
             </div>
           </div>
         </header>
 
-        {/* --- CONTENT --- */}
+        {/* DASHBOARD CONTENT */}
         <main className={s.content}>
           <div className={s.pageHeader}>
             <div>
               <h2 className={s.title}>Dashboard</h2>
-              <p className={s.subtitle}>Visão geral do seu negócio</p>
+              <p className={s.subtitle}>Visão geral do negócio em tempo real</p>
             </div>
-            <button className={s.primaryBtn}>Download Relatório</button>
+            {/* Botão decorativo */}
+            <button className={s.primaryBtn} onClick={() => window.print()}>
+              Imprimir Resumo
+            </button>
           </div>
 
-          {/* STATS GRID */}
+          {/* 1. GRIDS DE ESTATÍSTICAS (KPIs) */}
           <div className={s.statsGrid}>
-            
-            {/* --- CARD ATUALIZADO COM DADOS REAIS --- */}
+            {/* Card 1: Vendas Hoje (Real do Banco) */}
             <StatCard 
-              title="Vendas do Dia" 
-              value={vendasHoje.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} 
-              trend="+12%" 
+              title="Vendas Hoje" 
+              value={dashboardData.vendasHoje.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} 
+              trend="Atualizado agora" 
               trendUp={true} 
               icon={DollarSign} 
-              color="orange"
+              color="green" 
             />
-            {/* -------------------------------------- */}
-
+            
+            {/* Card 2: Produtos Populares (Conta do gráfico) */}
             <StatCard 
-              title="Produtos Vendidos" 
-              value="342" 
-              trend="+8%" 
+              title="Produtos Top" 
+              value={dashboardData.graficoProdutos.length} 
+              trend="Itens mais saídos" 
               trendUp={true} 
-              icon={ShoppingCart} 
-              color="blue"
-            />
-            <StatCard 
-              title="Estoque Total" 
-              value="1.234" 
-              trend="-5%" 
-              trendUp={false} 
               icon={Package} 
-              color="red"
+              color="blue" 
             />
+            
+            {/* Card 3: Meta (Fictício para compor layout) */}
             <StatCard 
-              title="Crescimento" 
-              value="+23%" 
-              trend="Melhor mês" 
+              title="Meta Mensal" 
+              value="65%" 
+              trend="Em progresso" 
               trendUp={true} 
               icon={TrendingUp} 
-              color="green"
+              color="orange" 
             />
           </div>
 
-          {/* CHARTS GRID */}
+          {/* 2. GRÁFICOS (Charts) */}
           <div className={s.chartsGrid}>
             
-            {/* Gráfico de Linha */}
+            {/* Gráfico de Linha: Evolução de Vendas */}
             <div className={s.card}>
               <div className={s.cardHeader}>
-                <h3>Vendas da Semana</h3>
-                <p>Evolução dos últimos 7 dias</p>
+                <h3>Evolução de Vendas</h3>
+                <p>Últimos 7 dias</p>
               </div>
               <div className={s.chartContainer}>
                 <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={salesData}>
+                  <LineChart data={dashboardData.graficoVendas}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                    <XAxis dataKey="name" stroke="#888" tick={{fontSize: 12}} />
+                    <XAxis dataKey="dia" stroke="#888" tick={{fontSize: 12}} />
                     <YAxis stroke="#888" tick={{fontSize: 12}} />
-                    <Tooltip 
-                      contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} 
-                    />
+                    <Tooltip contentStyle={{borderRadius: '8px', border: 'none', boxShadow:'0 4px 12px rgba(0,0,0,0.1)'}} />
                     <Line 
                       type="monotone" 
-                      dataKey="vendas" 
+                      dataKey="total" 
                       stroke="#E88C22" 
                       strokeWidth={3} 
-                      dot={{ r: 4, fill: '#E88C22', strokeWidth: 2, stroke: '#fff' }}
-                      activeDot={{ r: 6 }} 
+                      dot={{r: 4, fill: '#E88C22', strokeWidth: 2, stroke: '#fff'}}
                     />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
             </div>
 
-            {/* Gráfico de Barras */}
+            {/* Gráfico de Barras: Top Produtos */}
             <div className={s.card}>
               <div className={s.cardHeader}>
                 <h3>Top Produtos</h3>
-                <p>Mais vendidos na semana</p>
+                <p>Mais vendidos</p>
               </div>
               <div className={s.chartContainer}>
                 <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={productsData}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                    <XAxis dataKey="name" stroke="#888" tick={{fontSize: 11}} />
-                    <Tooltip 
-                        cursor={{fill: '#f4f4f4'}}
-                        contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
-                    />
-                    <Bar 
-                      dataKey="quantidade" 
-                      fill="#8B1C1C" 
-                      radius={[4, 4, 0, 0]} 
-                      barSize={40}
-                    />
+                  <BarChart data={dashboardData.graficoProdutos} layout="vertical">
+                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f0f0f0" />
+                    <XAxis type="number" hide />
+                    <YAxis dataKey="name" type="category" width={100} tick={{fontSize: 11}} />
+                    <Tooltip cursor={{fill: 'transparent'}} />
+                    <Bar dataKey="quantidade" fill="#8B1C1C" radius={[0, 4, 4, 0]} barSize={20} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -356,37 +227,39 @@ export default function Dashboard() {
 
           </div>
 
-          {/* TRANSACTIONS TABLE */}
+          {/* 3. TABELA DE TRANSAÇÕES RECENTES */}
           <div className={s.card}>
             <div className={s.cardHeader}>
-              <h3>Transações Recentes</h3>
-              <p>Últimas vendas realizadas hoje</p>
+              <h3>Últimas Transações</h3>
+              <p>Registo em tempo real do banco de dados</p>
             </div>
             <div className={s.tableResponsive}>
               <table className={s.table}>
                 <thead>
                   <tr>
-                    <th>Produto</th>
-                    <th>Qtd.</th>
-                    <th>Valor</th>
+                    <th>ID</th>
+                    <th>Produto Principal</th>
+                    <th>Valor Total</th>
                     <th>Data/Hora</th>
                     <th>Status</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {recentTransactions.map((t) => (
-                    <tr key={t.id}>
-                      <td className={s.productCell}>{t.produto}</td>
-                      <td>{t.quantidade}</td>
-                      <td className={s.valueCell}>{t.valor}</td>
-                      <td className={s.dateCell}>{t.data}</td>
-                      <td>
-                        <span className={`${s.statusBadge} ${s[t.status.toLowerCase()]}`}>
-                          {t.status}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
+                  {dashboardData.transacoes.length > 0 ? (
+                    dashboardData.transacoes.map((t) => (
+                      <tr key={t.id}>
+                        <td>#{t.id}</td>
+                        <td className={s.productCell}>{t.produto}</td>
+                        <td className={s.valueCell}>R$ {parseFloat(t.valor).toFixed(2)}</td>
+                        <td className={s.dateCell}>{t.data}</td>
+                        <td>
+                          <span className={`${s.statusBadge} ${s.concluído}`}>Concluído</span>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr><td colSpan="5" style={{textAlign:'center', padding:'20px', color:'#888'}}>Nenhuma venda hoje.</td></tr>
+                  )}
                 </tbody>
               </table>
             </div>
@@ -398,7 +271,7 @@ export default function Dashboard() {
   );
 }
 
-// Component Card
+// --- Componente Auxiliar: StatCard (Para manter o design limpo) ---
 function StatCard({ title, value, trend, trendUp, icon: Icon, color }) {
   return (
     <div className={s.statCard}>
@@ -413,12 +286,9 @@ function StatCard({ title, value, trend, trendUp, icon: Icon, color }) {
       </div>
       <div className={s.statFooter}>
         <span className={trendUp ? s.trendUp : s.trendDown}>
-          {trendUp 
-            ? <TrendingUp size={14} /> 
-            : <TrendingUp size={14} style={{transform: 'scaleY(-1)'}} />}
+          {trendUp ? <TrendingUp size={14}/> : <TrendingUp size={14} style={{transform:'scaleY(-1)'}}/>} 
           {trend}
         </span>
-        <span className={s.statLabel}>vs. período anterior</span>
       </div>
     </div>
   );
