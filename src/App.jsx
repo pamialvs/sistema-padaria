@@ -3,6 +3,7 @@ import Cadastro from './Pages/cadastro/Cadastro.jsx';
 import Dashboard from './Pages/dashboard/Dashboard.jsx';
 import Vendas from './Pages/vendas/Vendas.jsx';
 import  Estoque from './Pages/estoque/Estoque.jsx';
+import Clientes from './Pages/clientes/Clientes.jsx';
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 export default function App() {
@@ -15,6 +16,7 @@ export default function App() {
         <Route path="/dashboard" element={<Dashboard />} /> 
          <Route path="/vendas" element={<Vendas />} /> 
           <Route path="/estoque" element={<Estoque />} /> 
+            <Route path="/clientes" element={<Clientes />} />
 
       </Routes>
     </BrowserRouter>
