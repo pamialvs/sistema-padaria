@@ -8,33 +8,38 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
 
- const handleLogin = async (e) => {
-  e.preventDefault();
+  const handleLogin = async (e) => {
+    e.preventDefault();
 
-  try {
-    const response = await fetch("http://localhost:3000/login", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ email, password: senha }),
-    });
+    try {
+      const response = await fetch("http://localhost:3000/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password: senha }),
+      });
 
-    const data = await response.json();
+      const data = await response.json();
 
-    if (response.ok) {
-      alert("Login realizado!");
-      window.location.href = "/dashboard";
-    } else {
-      alert(data.message || "Erro ao fazer login");
+      if (response.ok) {
+        // --- CORREÇÃO APLICADA AQUI ---
+        // Salvamos o token no navegador para o Dashboard ler depois
+        localStorage.setItem("authToken", data.token);
+        // ------------------------------
+
+        alert("Login realizado!");
+        // Redireciona para o dashboard
+        window.location.href = "/dashboard";
+      } else {
+        alert(data.message || "Erro ao fazer login");
+      }
+
+    } catch (err) {
+      alert("Erro de conexão com o servidor");
+      console.error(err);
     }
-
-  } catch (err) {
-    alert("Erro de conexão com o servidor");
-    console.error(err);
-  }
-};
-
+  };
 
   return (
     <main className={s.container}>
