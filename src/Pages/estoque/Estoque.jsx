@@ -1,187 +1,147 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
     Package, AlertTriangle, AlertCircle, Clock, Search, Filter,
     Plus, Edit, Trash2, X, LayoutDashboard, ShoppingCart,
-    LogOut, FileText, Users
+    LogOut, FileText, Users, Truck, Tag
 } from "lucide-react";
-// Importar o arquivo SCSS adaptado
 import s from '../estoque/estoque.module.scss'; 
-// import { toast } from "@/hooks/use-toast"; // Assumindo que toast está disponível
-
-// --- TIPAGEM (Apenas para referência no código JSX) ---
-/**
- * @typedef {'ok' | 'baixo' | 'critico'} ProductStatus
- * @typedef {{ id: string, name: string, category: string, quantity: number, minQuantity: number, status: ProductStatus }} Product
- */
 
 // --- FUNÇÕES AUXILIARES ---
-/**
- * @param {number} quantity
- * @param {number} minQuantity
- * @returns {ProductStatus}
- */
 const calculateStatus = (quantity, minQuantity) => {
-    if (quantity <= minQuantity * 0.3) return "critico";
-    if (quantity <= minQuantity) return "baixo";
+    const min = minQuantity || 10;
+    if (quantity <= min * 0.3) return "critico";
+    if (quantity <= min) return "baixo";
     return "ok";
 };
 
-// --- DADOS MOCKADOS ---
-/** @type {Product[]} */
-const initialProducts = [
-    { id: "1", name: "Pão Francês", category: "paes", quantity: 150, minQuantity: 50, status: calculateStatus(150, 50) },
-    { id: "2", name: "Coxinha", category: "salgados", quantity: 25, minQuantity: 30, status: calculateStatus(25, 30) },
-    { id: "3", name: "Refrigerante Coca 2L", category: "bebidas", quantity: 45, minQuantity: 20, status: calculateStatus(45, 20) },
-    { id: "4", name: "Suco de Laranja", category: "bebidas", quantity: 8, minQuantity: 15, status: calculateStatus(8, 15) },
-    { id: "5", name: "Farinha de Trigo 5kg", category: "ingredientes", quantity: 12, minQuantity: 10, status: calculateStatus(12, 10) },
-    { id: "6", name: "Fermento Biológico", category: "ingredientes", quantity: 3, minQuantity: 5, status: calculateStatus(3, 5) },
-    { id: "7", name: "Pão de Queijo", category: "salgados", quantity: 60, minQuantity: 40, status: calculateStatus(60, 40) },
-    { id: "8", name: "Croissant", category: "paes", quantity: 18, minQuantity: 25, status: calculateStatus(18, 25) },
-];
-
 export default function GerenciarEstoque() {
     const navigate = useNavigate();
-    const [products, setProducts] = useState(initialProducts);
-    const [categoryFilter, setCategoryFilter] = useState("all");
+    
+    // Estados de Dados
+    const [products, setProducts] = useState([]); // Itens do Estoque
+    const [fornecedores, setFornecedores] = useState([]); // Lista de Fornecedores
+
+    // Filtros
     const [statusFilter, setStatusFilter] = useState("all");
-    const [sortBy, setSortBy] = useState("name");
-    const [searchTerm, setSearchTerm] = useState(""); // Novo: Filtro de busca
+    const [searchTerm, setSearchTerm] = useState("");
 
     // Modais
-    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-    /** @type {[Product | null, React.Dispatch<React.SetStateAction<Product | null>>]} */
-    const [productToEdit, setProductToEdit] = useState(null);
+    const [isAddStockModalOpen, setIsAddStockModalOpen] = useState(false);
+    const [isAddSupplierModalOpen, setIsAddSupplierModalOpen] = useState(false);
+    const [isAddProductModalOpen, setIsAddProductModalOpen] = useState(false);
+
+    // --- 1. BUSCAR DADOS DO BACKEND ---
+    const fetchData = () => {
+        // Carregar Estoque
+        fetch("http://localhost:3000/estoque")
+            .then(res => res.json())
+            .then(data => {
+                const estoqueFormatado = data.map(item => ({
+                    id: item.iditemestoque,
+                    name: item.nomeitemestoque,
+                    quantity: item.quantidadeitemestoque,
+                    unidade: item.unidademedidaitemestoque,
+                    fornecedor: item.nomefornecedor,
+                    status: calculateStatus(item.quantidadeitemestoque, 10)
+                }));
+                setProducts(estoqueFormatado);
+            })
+            .catch(err => console.error("Erro estoque:", err));
+
+        // Carregar Fornecedores
+        fetch("http://localhost:3000/fornecedores")
+            .then(res => res.json())
+            .then(data => setFornecedores(data))
+            .catch(err => console.error("Erro fornecedores:", err));
+    };
+
+    useEffect(() => {
+        fetchData();
+    }, []);
 
     const handleLogout = () => {
         localStorage.removeItem('authToken');
         navigate('/');
     };
 
-    // --- LÓGICA DE FILTRAGEM E ORDENAÇÃO ---
+    // --- 2. FUNÇÕES DE CADASTRO (POST) ---
 
-    const availableCategories = useMemo(() => {
-        const categories = new Set(products.map(p => p.category));
-        return ["all", ...Array.from(categories)].sort();
-    }, [products]);
+    // A. Cadastrar Item no Estoque
+    const handleAddStock = async (formData) => {
+        try {
+            const res = await fetch("http://localhost:3000/estoque", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    nome: formData.name,
+                    custo: formData.custo,
+                    quantidade: formData.quantity,
+                    unidade: formData.unidade,
+                    idFornecedor: formData.idFornecedor
+                })
+            });
+            if (res.ok) {
+                alert("Item adicionado ao estoque!");
+                setIsAddStockModalOpen(false);
+                fetchData(); // Recarrega a tabela
+            } else {
+                alert("Erro ao cadastrar item.");
+            }
+        } catch (error) { console.error(error); alert("Erro de conexão."); }
+    };
 
+    // B. Cadastrar Fornecedor
+    const handleAddSupplier = async (formData) => {
+        try {
+            const res = await fetch("http://localhost:3000/fornecedores", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(formData)
+            });
+            if (res.ok) {
+                alert("Fornecedor cadastrado!");
+                setIsAddSupplierModalOpen(false);
+                fetchData(); // Atualiza o dropdown de fornecedores
+            } else {
+                alert("Erro ao cadastrar fornecedor.");
+            }
+        } catch (error) { console.error(error); alert("Erro de conexão."); }
+    };
+
+    // C. Cadastrar Produto de Venda (Cardápio)
+    const handleAddProduct = async (formData) => {
+        try {
+            const res = await fetch("http://localhost:3000/produtos", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(formData)
+            });
+            if (res.ok) {
+                alert("Produto adicionado ao Cardápio! Agora aparece em Vendas.");
+                setIsAddProductModalOpen(false);
+            } else {
+                alert("Erro ao cadastrar produto.");
+            }
+        } catch (error) { console.error(error); alert("Erro de conexão."); }
+    };
+
+    // --- LÓGICA DE FILTRAGEM ---
     const filteredProducts = useMemo(() => {
         let filtered = [...products];
-
-        // 1. Filtro de Busca
-        if (searchTerm) {
-            const lowerCaseSearch = searchTerm.toLowerCase();
-            filtered = filtered.filter(
-                (p) => p.name.toLowerCase().includes(lowerCaseSearch)
-            );
-        }
-
-        // 2. Filtro de Categoria
-        if (categoryFilter !== "all") {
-            filtered = filtered.filter((p) => p.category === categoryFilter);
-        }
-        
-        // 3. Filtro de Status
-        if (statusFilter !== "all") {
-            filtered = filtered.filter((p) => p.status === statusFilter);
-        }
-
-        // 4. Ordenação
-        filtered.sort((a, b) => {
-            switch (sortBy) {
-                case "quantity":
-                    return b.quantity - a.quantity;
-                case "category":
-                    return a.category.localeCompare(b.category);
-                case "status":
-                    const statusOrder = { critico: 0, baixo: 1, ok: 2 };
-                    return statusOrder[a.status] - statusOrder[b.status];
-                default:
-                    return a.name.localeCompare(b.name);
-            }
-        });
-
+        if (searchTerm) filtered = filtered.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
+        if (statusFilter !== "all") filtered = filtered.filter(p => p.status === statusFilter);
         return filtered;
-    }, [products, categoryFilter, statusFilter, sortBy, searchTerm]);
+    }, [products, statusFilter, searchTerm]);
 
     const stats = useMemo(() => ({
         total: products.length,
-        lowStock: products.filter((p) => p.status === "baixo").length,
-        critical: products.filter((p) => p.status === "critico").length,
+        lowStock: products.filter(p => p.status === "baixo").length,
+        critical: products.filter(p => p.status === "critico").length,
     }), [products]);
-
-    const handleResetFilters = () => {
-        setCategoryFilter("all");
-        setStatusFilter("all");
-        setSortBy("name");
-        setSearchTerm("");
-    };
-
-    // --- FUNÇÕES CRUD ---
-
-    /**
-     * @param {{ name: string, category: string, quantity: number, minQuantity: number }} newProductData
-     */
-    const handleAddProduct = (newProductData) => {
-        const status = calculateStatus(newProductData.quantity, newProductData.minQuantity);
-
-        /** @type {Product} */
-        const product = {
-            id: Date.now().toString(),
-            ...newProductData,
-            status,
-        };
-
-        setProducts((prev) => [...prev, product]);
-        setIsAddModalOpen(false);
-        // toast({ title: "Produto adicionado", description: `${newProductData.name} foi adicionado ao estoque.` });
-        alert(`Produto adicionado: ${newProductData.name}`);
-    };
-
-    /**
-     * Prepara o modal de edição
-     * @param {Product} product
-     */
-    const handleEditClick = (product) => {
-        setProductToEdit(product);
-        setIsEditModalOpen(true);
-    };
-
-    /**
-     * Salva o produto editado
-     * @param {Product} updatedProduct
-     */
-    const handleEditProduct = (updatedProduct) => {
-        // Recalcula o status
-        const newStatus = calculateStatus(updatedProduct.quantity, updatedProduct.minQuantity);
-        
-        const finalProduct = { ...updatedProduct, status: newStatus };
-
-        setProducts((prev) => 
-            prev.map((p) => (p.id === finalProduct.id ? finalProduct : p))
-        );
-        setProductToEdit(null);
-        setIsEditModalOpen(false);
-        // toast({ title: "Produto atualizado", description: `${updatedProduct.name} foi modificado.` });
-        alert(`Produto atualizado: ${updatedProduct.name}`);
-    };
-
-    /**
-     * @param {Product} product
-     */
-    const handleDeleteProduct = (product) => {
-        if (!window.confirm(`Tem certeza que deseja remover ${product.name} do estoque?`)) return;
-
-        setProducts((prev) => prev.filter((p) => p.id !== product.id));
-        // toast({ title: "Produto removido", description: `${product.name} foi removido do estoque.`, variant: "destructive" });
-        alert(`Produto removido: ${product.name}`);
-    };
 
     return (
         <div className={s.layout}>
-
-            {/* SIDEBAR - Estrutura copiada de GerenciarVendas */}
             <aside className={s.sidebar}>
                 <div className={s.logoContainer}><h1 className={s.logo}>PÃO DOURADO</h1></div>
                 <nav className={s.nav}>
@@ -196,99 +156,62 @@ export default function GerenciarEstoque() {
                 </div>
             </aside>
 
-            {/* CONTEÚDO PRINCIPAL */}
             <main className={s.content}>
                 <header className={s.pageHeader}>
                     <div>
-                        <h2 className={s.title}>Gerenciar Estoque</h2>
-                        <p className={s.subtitle}>Produtos, ingredientes e status de reposição</p>
+                        <h2 className={s.title}>Gestão de Recursos</h2>
+                        <p className={s.subtitle}>Cadastros gerais e controle de estoque</p>
                     </div>
-                    <button className={s.btnAdd} onClick={() => setIsAddModalOpen(true)}>
-                        <Plus size={18} /> Novo Produto
-                    </button>
+                    <div style={{display: 'flex', gap: '10px'}}>
+                        {/* Botões de Ação Rápida */}
+                        <button className={s.btnAdd} onClick={() => setIsAddSupplierModalOpen(true)} style={{backgroundColor: '#8B1C1C'}}>
+                            <Truck size={18} /> Fornecedor
+                        </button>
+                        <button className={s.btnAdd} onClick={() => setIsAddProductModalOpen(true)} style={{backgroundColor: '#2563eb'}}>
+                            <Tag size={18} /> Produto (Venda)
+                        </button>
+                        <button className={s.btnAdd} onClick={() => setIsAddStockModalOpen(true)}>
+                            <Plus size={18} /> Item Estoque
+                        </button>
+                    </div>
                 </header>
 
-                {/* STAT CARDS - Adaptados para usar as classes SCSS */}
                 <div className={s.statsGrid}>
                     <div className={s.statCard}>
-                        <div className={s.statInfo}>
-                            <span>Total de Itens</span>
-                            <strong>{stats.total}</strong>
-                        </div>
+                        <div className={s.statInfo}><span>Total de Itens</span><strong>{stats.total}</strong></div>
                         <div className={`${s.iconWrapper} ${s.blue}`}><Package size={24} /></div>
                     </div>
                     <div className={s.statCard}>
-                        <div className={s.statInfo}>
-                            <span>Baixo Estoque</span>
-                            <strong>{stats.lowStock}</strong>
-                        </div>
+                        <div className={s.statInfo}><span>Baixo Estoque</span><strong>{stats.lowStock}</strong></div>
                         <div className={`${s.iconWrapper} ${s.yellow}`}><AlertTriangle size={24} /></div>
                     </div>
                     <div className={s.statCard}>
-                        <div className={s.statInfo}>
-                            <span>Itens Críticos</span>
-                            <strong>{stats.critical}</strong>
-                        </div>
+                        <div className={s.statInfo}><span>Itens Críticos</span><strong>{stats.critical}</strong></div>
                         <div className={`${s.iconWrapper} ${s.red}`}><AlertCircle size={24} /></div>
-                    </div>
-                    <div className={s.statCard}>
-                        <div className={s.statInfo}>
-                            <span>Última Atualização</span>
-                            <strong>Agora</strong>
-                        </div>
-                        <div className={`${s.iconWrapper} ${s.gray}`}><Clock size={24} /></div>
                     </div>
                 </div>
 
-                {/* FILTROS E TABELA - Adaptados para usar as classes SCSS */}
                 <div className={s.tableCard}>
                     <div className={s.filters}>
-                        {/* Busca */}
                         <div className={s.searchBox}>
                             <Search className={s.searchIcon} size={18} />
-                            <input 
-                                type="text" 
-                                placeholder="Buscar por nome..." 
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                            />
+                            <input type="text" placeholder="Buscar no estoque..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}/>
                         </div>
-                        
-                        {/* Filtro de Categoria */}
-                        <select 
-                            className={s.selectFilter} 
-                            value={categoryFilter} 
-                            onChange={(e) => setCategoryFilter(e.target.value)}
-                        >
-                            <option value="all">Todas Categorias</option>
-                            {availableCategories.filter(c => c !== 'all').map(c => (
-                                <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>
-                            ))}
-                        </select>
-                        
-                        {/* Filtro de Status */}
-                        <select 
-                            className={s.selectFilter} 
-                            value={statusFilter} 
-                            onChange={(e) => setStatusFilter(e.target.value)}
-                        >
+                        <select className={s.selectFilter} value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
                             <option value="all">Todos Status</option>
                             <option value="ok">OK</option>
-                            <option value="baixo">Baixo Estoque</option>
+                            <option value="baixo">Baixo</option>
                             <option value="critico">Crítico</option>
                         </select>
-
-                        <button onClick={handleResetFilters} className={s.actionBtn} style={{border: '1px solid #e2e8f0', borderRadius: '8px', padding: '0 10px'}}><Filter size={18} /> Limpar</button>
                     </div>
 
                     <div className={s.tableResponsive}>
                         <table className={s.table}>
                             <thead>
                                 <tr>
-                                    <th>Produto</th>
-                                    <th>Categoria</th>
-                                    <th>Estoque Atual</th>
-                                    <th>Estoque Mín.</th>
+                                    <th>Item</th>
+                                    <th>Fornecedor</th>
+                                    <th>Qtd. Atual</th>
                                     <th>Status</th>
                                     <th>Ações</th>
                                 </tr>
@@ -297,22 +220,10 @@ export default function GerenciarEstoque() {
                                 {filteredProducts.map((product) => (
                                     <tr key={product.id}>
                                         <td>{product.name}</td>
-                                        <td>{product.category}</td>
-                                        <td>{product.quantity}</td>
-                                        <td>{product.minQuantity}</td>
-                                        <td>
-                                            <span className={`${s.statusBadge} ${s[product.status]}`}>
-                                                {product.status.toUpperCase()}
-                                            </span>
-                                        </td>
-                                        <td>
-                                            <button className={s.actionBtn} onClick={() => handleEditClick(product)}>
-                                                <Edit size={18} />
-                                            </button>
-                                            <button className={s.actionBtn} onClick={() => handleDeleteProduct(product)}>
-                                                <Trash2 size={18} />
-                                            </button>
-                                        </td>
+                                        <td>{product.fornecedor || "-"}</td>
+                                        <td>{product.quantity} {product.unidade}</td>
+                                        <td><span className={`${s.statusBadge} ${s[product.status]}`}>{product.status.toUpperCase()}</span></td>
+                                        <td><button className={s.actionBtn}><Trash2 size={18} /></button></td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -321,23 +232,32 @@ export default function GerenciarEstoque() {
                 </div>
             </main>
 
-            {/* --- MODAL DE NOVO PRODUTO (Baseado no modal de Nova Venda) --- */}
-            <AddProductModal 
-                open={isAddModalOpen} 
-                onClose={() => setIsAddModalOpen(false)} 
-                onAdd={handleAddProduct}
-                categories={availableCategories.filter(c => c !== 'all')}
-                scss={s}
-            />
+            {/* --- MODAIS --- */}
 
-            {/* --- MODAL DE EDIÇÃO DE PRODUTO --- */}
-            {isEditModalOpen && productToEdit && (
-                <EditProductModal 
-                    open={isEditModalOpen} 
-                    onClose={() => { setIsEditModalOpen(false); setProductToEdit(null); }} 
-                    onSave={handleEditProduct}
-                    product={productToEdit}
-                    categories={availableCategories.filter(c => c !== 'all')}
+            {/* 1. Modal Novo Item de Estoque */}
+            {isAddStockModalOpen && (
+                <StockModal 
+                    onClose={() => setIsAddStockModalOpen(false)} 
+                    onSave={handleAddStock}
+                    fornecedores={fornecedores}
+                    scss={s}
+                />
+            )}
+
+            {/* 2. Modal Novo Fornecedor */}
+            {isAddSupplierModalOpen && (
+                <SupplierModal 
+                    onClose={() => setIsAddSupplierModalOpen(false)} 
+                    onSave={handleAddSupplier}
+                    scss={s}
+                />
+            )}
+
+            {/* 3. Modal Novo Produto (Venda) */}
+            {isAddProductModalOpen && (
+                <ProductModal 
+                    onClose={() => setIsAddProductModalOpen(false)} 
+                    onSave={handleAddProduct}
                     scss={s}
                 />
             )}
@@ -345,190 +265,77 @@ export default function GerenciarEstoque() {
     );
 }
 
-// --- Componente Modal de Adição de Produto (Novo/Adaptado) ---
-const AddProductModal = ({ open, onClose, onAdd, categories, scss }) => {
-    const [formData, setFormData] = useState({
-        name: "",
-        category: categories.length > 0 ? categories[0] : "",
-        quantity: 0,
-        minQuantity: 0,
-    });
+// --- Componentes dos Modais ---
 
-    const handleChange = (e) => {
-        const { name, value, type } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: type === 'number' ? parseFloat(value) : value
-        }));
-    };
-
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        onAdd(formData);
-        // Reset form
-        setFormData({
-            name: "",
-            category: categories.length > 0 ? categories[0] : "",
-            quantity: 0,
-            minQuantity: 0,
-        });
-    };
-
-    if (!open) return null;
-
+const StockModal = ({ onClose, onSave, fornecedores, scss }) => {
+    const [form, setForm] = useState({ name: "", quantity: 0, custo: 0, unidade: "un", idFornecedor: "" });
     return (
         <div className={scss.modalOverlay}>
             <div className={scss.modal}>
-                <div className={scss.modalHeader}>
-                    <h3>Adicionar Novo Produto</h3>
-                    <button onClick={onClose}><X size={20}/></button>
-                </div>
-                <form onSubmit={handleSubmit} className={scss.form}>
-                    <div className={scss.formGroup}>
-                        <label>Nome do Produto</label>
-                        <input 
-                            type="text" 
-                            name="name"
-                            value={formData.name}
-                            onChange={handleChange}
-                            required 
-                            placeholder="Ex: Pão de Forma"
-                        />
+                <div className={scss.modalHeader}><h3>Novo Item de Estoque</h3><button onClick={onClose}><X size={20}/></button></div>
+                <form onSubmit={(e) => { e.preventDefault(); onSave(form); }} className={scss.form}>
+                    <div className={scss.formGroup}><label>Nome</label><input required onChange={e => setForm({...form, name: e.target.value})} placeholder="Ex: Farinha de Trigo"/></div>
+                    <div className={scss.formGroup}><label>Fornecedor</label>
+                        <select required onChange={e => setForm({...form, idFornecedor: e.target.value})}>
+                            <option value="">Selecione...</option>
+                            {fornecedores.map(f => <option key={f.idfornecedor} value={f.idfornecedor}>{f.nomefornecedor}</option>)}
+                        </select>
                     </div>
                     <div className={scss.formRow}>
-                        <div className={scss.formGroup}>
-                            <label>Categoria</label>
-                            <select 
-                                name="category"
-                                value={formData.category}
-                                onChange={handleChange}
-                                required
-                            >
-                                {categories.map(c => (
-                                    <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>
-                                ))}
-                            </select>
-                        </div>
-                        <div className={scss.formGroup}>
-                            <label>Estoque Mínimo</label>
-                            <input 
-                                type="number" 
-                                name="minQuantity"
-                                value={formData.minQuantity}
-                                onChange={handleChange}
-                                min="0"
-                                required
-                            />
-                        </div>
+                        <div className={scss.formGroup}><label>Qtd</label><input type="number" required onChange={e => setForm({...form, quantity: e.target.value})} /></div>
+                        <div className={scss.formGroup}><label>Unidade</label><input required onChange={e => setForm({...form, unidade: e.target.value})} placeholder="kg, cx..." /></div>
                     </div>
-                    <div className={scss.formGroup}>
-                        <label>Quantidade Inicial</label>
-                        <input 
-                            type="number" 
-                            name="quantity"
-                            value={formData.quantity}
-                            onChange={handleChange}
-                            min="0"
-                            required
-                        />
-                    </div>
-                    
-                    <div className={scss.modalFooter}>
-                        <button type="button" onClick={onClose} className={scss.btnCancel}>Cancelar</button>
-                        <button type="submit" className={scss.btnSubmit}>Adicionar</button>
-                    </div>
+                    <div className={scss.formGroup}><label>Custo Unit. (R$)</label><input type="number" step="0.01" onChange={e => setForm({...form, custo: e.target.value})} /></div>
+                    <div className={scss.modalFooter}><button type="submit" className={scss.btnSubmit}>Salvar</button></div>
                 </form>
             </div>
         </div>
     );
 };
 
-// --- Componente Modal de Edição de Produto (Novo/Adaptado) ---
-const EditProductModal = ({ open, onClose, onSave, product, categories, scss }) => {
-    // Inicializa o formulário com os dados do produto
-    const [formData, setFormData] = useState({
-        id: product.id,
-        name: product.name,
-        category: product.category,
-        quantity: product.quantity,
-        minQuantity: product.minQuantity,
-    });
-
-    const handleChange = (e) => {
-        const { name, value, type } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: type === 'number' ? parseFloat(value) : value
-        }));
-    };
-
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        onSave(formData); // Chama a função de salvar no componente pai
-    };
-
-    if (!open) return null;
-
+const SupplierModal = ({ onClose, onSave, scss }) => {
+    const [form, setForm] = useState({ nome: "", contato: "", endereco: "" });
     return (
         <div className={scss.modalOverlay}>
             <div className={scss.modal}>
-                <div className={scss.modalHeader}>
-                    <h3>Editar Produto: {product.name}</h3>
-                    <button onClick={onClose}><X size={20}/></button>
-                </div>
-                <form onSubmit={handleSubmit} className={scss.form}>
-                    <div className={scss.formGroup}>
-                        <label>Nome do Produto</label>
-                        <input 
-                            type="text" 
-                            name="name"
-                            value={formData.name}
-                            onChange={handleChange}
-                            required 
-                        />
-                    </div>
+                <div className={scss.modalHeader}><h3>Novo Fornecedor</h3><button onClick={onClose}><X size={20}/></button></div>
+                <form onSubmit={(e) => { e.preventDefault(); onSave(form); }} className={scss.form}>
+                    <div className={scss.formGroup}><label>Nome Empresa</label><input required onChange={e => setForm({...form, nome: e.target.value})} /></div>
+                    <div className={scss.formGroup}><label>Contato/CNPJ</label><input required onChange={e => setForm({...form, contato: e.target.value})} /></div>
+                    <div className={scss.formGroup}><label>Endereço</label><input required onChange={e => setForm({...form, endereco: e.target.value})} /></div>
+                    <div className={scss.modalFooter}><button type="submit" className={scss.btnSubmit}>Cadastrar</button></div>
+                </form>
+            </div>
+        </div>
+    );
+};
+
+const ProductModal = ({ onClose, onSave, scss }) => {
+    const [form, setForm] = useState({ nome: "", tipo: "Pão", origem: "Feito Manualmente", dataVencimento: "" });
+    return (
+        <div className={scss.modalOverlay}>
+            <div className={scss.modal}>
+                <div className={scss.modalHeader}><h3>Novo Produto (Cardápio)</h3><button onClick={onClose}><X size={20}/></button></div>
+                <form onSubmit={(e) => { e.preventDefault(); onSave(form); }} className={scss.form}>
+                    <div className={scss.formGroup}><label>Nome do Produto</label><input required placeholder="Ex: Croissant" onChange={e => setForm({...form, nome: e.target.value})} /></div>
                     <div className={scss.formRow}>
-                        <div className={scss.formGroup}>
-                            <label>Categoria</label>
-                            <select 
-                                name="category"
-                                value={formData.category}
-                                onChange={handleChange}
-                                required
-                            >
-                                {categories.map(c => (
-                                    <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>
-                                ))}
+                        <div className={scss.formGroup}><label>Tipo</label>
+                            <select onChange={e => setForm({...form, tipo: e.target.value})}>
+                                <option value="Pão">Pão</option>
+                                <option value="Salgado">Salgado</option>
+                                <option value="Doce">Doce</option>
+                                <option value="Bebida">Bebida</option>
                             </select>
                         </div>
-                        <div className={scss.formGroup}>
-                            <label>Estoque Mínimo</label>
-                            <input 
-                                type="number" 
-                                name="minQuantity"
-                                value={formData.minQuantity}
-                                onChange={handleChange}
-                                min="0"
-                                required
-                            />
+                        <div className={scss.formGroup}><label>Origem</label>
+                            <select onChange={e => setForm({...form, origem: e.target.value})}>
+                                <option value="Feito Manualmente">Própria</option>
+                                <option value="Comprado">Revenda</option>
+                            </select>
                         </div>
                     </div>
-                    <div className={scss.formGroup}>
-                        <label>Quantidade Atual</label>
-                        <input 
-                            type="number" 
-                            name="quantity"
-                            value={formData.quantity}
-                            onChange={handleChange}
-                            min="0"
-                            required
-                        />
-                    </div>
-                    
-                    <div className={scss.modalFooter}>
-                        <button type="button" onClick={onClose} className={scss.btnCancel}>Cancelar</button>
-                        <button type="submit" className={scss.btnSubmit}>Salvar Alterações</button>
-                    </div>
+                    <div className={scss.formGroup}><label>Validade Estimada</label><input type="date" onChange={e => setForm({...form, dataVencimento: e.target.value})} /></div>
+                    <div className={scss.modalFooter}><button type="submit" className={scss.btnSubmit}>Adicionar ao Menu</button></div>
                 </form>
             </div>
         </div>
