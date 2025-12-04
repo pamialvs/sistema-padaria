@@ -1,4 +1,4 @@
-import React from 'react'; 
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   TrendingUp, 
@@ -12,8 +12,12 @@ import {
   LogOut,
   LayoutDashboard,
   FileText,
-  Users
+  Users,
+  Settings
 } from "lucide-react";
+
+import { jwtDecode } from "jwt-decode";
+
 import { 
   LineChart, 
   Line, 
@@ -26,9 +30,10 @@ import {
   Legend, 
   ResponsiveContainer 
 } from "recharts";
+
 import s from './dashboard.module.scss';
 
-// --- DADOS MOCKADOS (Do seu código) ---
+// --- DADOS MOCKADOS ---
 const salesData = [
   { name: "Seg", vendas: 4200 },
   { name: "Ter", vendas: 3800 },
@@ -57,10 +62,39 @@ const recentTransactions = [
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  
+  // --- ESTADO PARA CONTROLAR O MENU ---
+  const [showUserMenu, setShowUserMenu] = useState(false);
 
+  // ============================================================
+  // === TÓPICO 2: LEITURA DO TOKEN JWT DO USUÁRIO LOGADO     ===
+  // ============================================================
+  const token = localStorage.getItem("authToken");
+  let user = null;
+
+  if (token) {
+    try {
+      user = jwtDecode(token);
+    } catch (error) {
+      console.error("Erro ao decodificar token:", error);
+    }
+  }
+
+  // ======================================================================
+  // === TÓPICO 3: GERAÇÃO AUTOMÁTICA DAS INICIAIS DO NOME DO USUÁRIO   ===
+  // ======================================================================
+  const initials = user?.username
+    ? user.username.split(" ").map(n => n[0]).join("").toUpperCase()
+    : "??";
+
+  // --- FUNÇÃO DE LOGOUT ALTERADA ---
   const handleLogout = () => {
+    // 1. Remove o token
     localStorage.removeItem('authToken');
-    navigate('/login');
+    
+    // 2. Redireciona forçadamente para a URL base (http://localhost:5173)
+    // Usar window.location.href é melhor aqui para garantir que a página recarregue do zero.
+    window.location.href = 'http://localhost:5173';
   };
 
   return (
@@ -91,6 +125,7 @@ export default function Dashboard() {
         </nav>
 
         <div className={s.sidebarFooter}>
+          {/* Botão Sair da Sidebar (lateral) também atualizado */}
           <button onClick={handleLogout} className={s.logoutBtn}>
             <LogOut size={20} /> <span>Sair</span>
           </button>
@@ -106,17 +141,97 @@ export default function Dashboard() {
             <Search className={s.searchIcon} size={20} />
             <input type="text" placeholder="Buscar..." className={s.searchInput} />
           </div>
+
           <div className={s.profileWrapper}>
             <button className={s.iconBtn}><Bell size={20} /></button>
-            <div className={s.userProfile}>
-              <div className={s.avatar}>PF</div>
-              <span>Pâmela Fernandes</span>
-              <ChevronDown size={16} />
+
+            {/* === MENU DROPDOWN DO USUÁRIO === */}
+            <div 
+              className={s.userProfile}
+              style={{ position: 'relative', cursor: 'pointer', userSelect: 'none' }}
+              onClick={() => setShowUserMenu(!showUserMenu)}
+            >
+              <div className={s.avatar}>{initials}</div>
+              <span>{user?.username || "Usuário"}</span>
+              
+              <ChevronDown 
+                size={16} 
+                style={{ transform: showUserMenu ? 'rotate(180deg)' : 'rotate(0deg)', transition: '0.2s' }}
+              />
+
+              {showUserMenu && (
+                <div style={{
+                  position: 'absolute',
+                  top: '120%', 
+                  right: 0,
+                  backgroundColor: 'white',
+                  border: '1px solid #e5e7eb',
+                  borderRadius: '8px',
+                  boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+                  width: '180px',
+                  padding: '6px',
+                  zIndex: 100,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '2px'
+                }}
+                onClick={(e) => e.stopPropagation()} 
+                >
+                  <button 
+                    onClick={() => navigate('/configuracoes')} 
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      padding: '10px',
+                      border: 'none',
+                      background: 'white',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      color: '#374151',
+                      width: '100%',
+                      borderRadius: '4px',
+                      textAlign: 'left',
+                      transition: 'background 0.2s'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = '#f3f4f6'}
+                    onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
+                  >
+                    <Settings size={16} /> Configuração
+                  </button>
+
+                  <div style={{ height: '1px', background: '#f3f4f6', margin: '4px 0' }} />
+
+                  {/* BOTÃO SAIR DO DROPDOWN */}
+                  <button 
+                    onClick={handleLogout}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      padding: '10px',
+                      border: 'none',
+                      background: 'white',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      color: '#ef4444',
+                      width: '100%',
+                      borderRadius: '4px',
+                      textAlign: 'left',
+                      transition: 'background 0.2s'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = '#fee2e2'}
+                    onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
+                  >
+                    <LogOut size={16} /> Sair
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </header>
 
-        {/* Dashboard Content */}
+        {/* --- CONTENT --- */}
         <main className={s.content}>
           <div className={s.pageHeader}>
             <div>
@@ -164,7 +279,8 @@ export default function Dashboard() {
 
           {/* CHARTS GRID */}
           <div className={s.chartsGrid}>
-            {/* Gráfico de Linha (Vendas) */}
+            
+            {/* Gráfico de Linha */}
             <div className={s.card}>
               <div className={s.cardHeader}>
                 <h3>Vendas da Semana</h3>
@@ -192,7 +308,7 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* Gráfico de Barras (Produtos) */}
+            {/* Gráfico de Barras */}
             <div className={s.card}>
               <div className={s.cardHeader}>
                 <h3>Top Produtos</h3>
@@ -204,8 +320,8 @@ export default function Dashboard() {
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
                     <XAxis dataKey="name" stroke="#888" tick={{fontSize: 11}} />
                     <Tooltip 
-                       cursor={{fill: '#f4f4f4'}}
-                       contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                        cursor={{fill: '#f4f4f4'}}
+                        contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
                     />
                     <Bar 
                       dataKey="quantidade" 
@@ -217,6 +333,7 @@ export default function Dashboard() {
                 </ResponsiveContainer>
               </div>
             </div>
+
           </div>
 
           {/* TRANSACTIONS TABLE */}
@@ -261,7 +378,7 @@ export default function Dashboard() {
   );
 }
 
-// Componente Interno Simples para os Cards de Estatística
+// Component Card
 function StatCard({ title, value, trend, trendUp, icon: Icon, color }) {
   return (
     <div className={s.statCard}>
@@ -276,7 +393,9 @@ function StatCard({ title, value, trend, trendUp, icon: Icon, color }) {
       </div>
       <div className={s.statFooter}>
         <span className={trendUp ? s.trendUp : s.trendDown}>
-          {trendUp ? <TrendingUp size={14} /> : <TrendingUp size={14} style={{transform: 'scaleY(-1)'}} />}
+          {trendUp 
+            ? <TrendingUp size={14} /> 
+            : <TrendingUp size={14} style={{transform: 'scaleY(-1)'}} />}
           {trend}
         </span>
         <span className={s.statLabel}>vs. período anterior</span>

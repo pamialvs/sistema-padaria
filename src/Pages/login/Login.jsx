@@ -1,9 +1,10 @@
 import { useState } from "react";
 import s from './login.module.scss';
 import imgLogin from '../../Assests/img-login.png';
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom"; 
 
 export default function Login() {
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
 
@@ -16,16 +17,22 @@ export default function Login() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ email, senha }),
+        body: JSON.stringify({ email, password: senha }),
       });
 
       const data = await response.json();
 
       if (response.ok) {
-        alert("Login realizado com sucesso!");
-        console.log("Usuário:", data);
+        // --- CORREÇÃO APLICADA AQUI ---
+        // Salvamos o token no navegador para o Dashboard ler depois
+        localStorage.setItem("authToken", data.token);
+        // ------------------------------
+
+        alert("Login realizado!");
+        // Redireciona para o dashboard
+        window.location.href = "/dashboard";
       } else {
-        alert(data.message || "Erro ao realizar login");
+        alert(data.message || "Erro ao fazer login");
       }
 
     } catch (err) {
@@ -36,7 +43,6 @@ export default function Login() {
 
   return (
     <main className={s.container}>
-
       <section className={s.loginSection}>
         <h1 className={s.loginTitle}>Faça seu Login</h1>
 
@@ -72,14 +78,14 @@ export default function Login() {
             className={s.buttonLogin}
           />
         </form>
+
         <p className={s.signupLink}>
           <Link to="/cadastro">Crie agora</Link>
         </p>
-
       </section>
 
       <section className={s.illustrationSection}>
-        <img src={imgLogin} alt="Ilustração" />
+        <img src={imgLogin} alt="Ilustração" />   
       </section>
     </main>
   );

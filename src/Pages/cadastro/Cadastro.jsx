@@ -10,11 +10,11 @@ export default function Cadastro() {
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
 
- const handleRegister = async (e) => {
+  const handleRegister = async (e) => {
   e.preventDefault();
 
   try {
-    const response = await fetch("http://localhost:3000/cadastro", {
+    const response = await fetch("http://localhost:3000/register", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
