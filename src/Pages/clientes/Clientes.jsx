@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
   Users, Search, Plus, Edit, Trash2, MapPin, 
@@ -7,23 +7,42 @@ import {
 } from "lucide-react";
 import s from './clientes.module.scss';
 
-// --- DADOS MOCKADOS ---
-const mockClientes = [
-  { id: 1, nome: "João Silva", email: "joao@gmail.com", telefone: "(11) 99999-1234", endereco: "Rua das Flores, 123", totalCompras: 15, status: "Ativo" },
-  { id: 2, nome: "Maria Santos", email: "maria@hotmail.com", telefone: "(11) 98888-5678", endereco: "Av. Paulista, 1000", totalCompras: 8, status: "Ativo" },
-  { id: 3, nome: "Carlos Oliveira", email: "carlos@empresa.com", telefone: "(11) 97777-4444", endereco: "Rua Augusta, 500", totalCompras: 2, status: "Inativo" },
-  { id: 4, nome: "Ana Pereira", email: "ana.p@gmail.com", telefone: "(11) 96666-3333", endereco: "Al. Lorena, 80", totalCompras: 24, status: "VIP" },
-];
-
 export default function Clientes() {
   const navigate = useNavigate();
-  const [clientes, setClientes] = useState(mockClientes);
+  
+  // Estado real dos dados
+  const [clientes, setClientes] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   
   // Estados do Modal
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [currentCliente, setCurrentCliente] = useState(null); // Se null = Novo, se objeto = Editando
   const [formData, setFormData] = useState({ nome: "", email: "", telefone: "", endereco: "" });
+
+  // --- 1. BUSCAR CLIENTES DO BACKEND ---
+  const fetchClientes = async () => {
+    try {
+        const res = await fetch("http://localhost:3000/clientes");
+        const data = await res.json();
+        
+        // Mapear campos do banco (minusculas) para o frontend
+        const formatados = data.map(c => ({
+            id: c.idcliente,
+            nome: c.nomecliente,
+            email: c.emailcliente || "Sem email",
+            telefone: c.telefonecliente || "-",
+            endereco: c.enderecocliente || "-",
+            totalCompras: 0, // Campo calculado fictício para a PoC (pois falta relação no banco)
+            status: "Ativo"
+        }));
+        setClientes(formatados);
+    } catch (error) {
+        console.error("Erro ao buscar clientes:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchClientes();
+  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem('authToken');
@@ -36,41 +55,49 @@ export default function Clientes() {
     c.telefone.includes(searchTerm)
   );
 
-  // --- CRUD (Simulado) ---
-  const openModal = (cliente = null) => {
-    if (cliente) {
-      setCurrentCliente(cliente);
-      setFormData({ nome: cliente.nome, email: cliente.email, telefone: cliente.telefone, endereco: cliente.endereco });
-    } else {
-      setCurrentCliente(null);
-      setFormData({ nome: "", email: "", telefone: "", endereco: "" });
-    }
+  // --- CRUD ---
+  const openModal = () => {
+    setFormData({ nome: "", email: "", telefone: "", endereco: "" });
     setIsModalOpen(true);
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (window.confirm("Tem certeza que deseja excluir este cliente?")) {
-      setClientes(clientes.filter(c => c.id !== id));
+      try {
+          await fetch(`http://localhost:3000/clientes/${id}`, { method: 'DELETE' });
+          alert("Cliente removido!");
+          fetchClientes(); // Atualiza a lista
+      } catch (err) {
+          alert("Erro ao excluir.");
+      }
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (currentCliente) {
-      // Editar
-      setClientes(clientes.map(c => c.id === currentCliente.id ? { ...c, ...formData } : c));
-    } else {
-      // Criar
-      const novoId = clientes.length + 1;
-      setClientes([{ id: novoId, ...formData, totalCompras: 0, status: "Ativo" }, ...clientes]);
+    
+    try {
+        const res = await fetch("http://localhost:3000/clientes", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(formData)
+        });
+
+        if (res.ok) {
+            alert("Cliente cadastrado com sucesso!");
+            setIsModalOpen(false);
+            fetchClientes(); // Atualiza a lista em tempo real
+        } else {
+            alert("Erro ao cadastrar.");
+        }
+    } catch (err) {
+        console.error(err);
+        alert("Erro de conexão.");
     }
-    setIsModalOpen(false);
   };
 
   return (
     <div className={s.layout}>
-      
-      {/* SIDEBAR */}
       <aside className={s.sidebar}>
         <div className={s.logoContainer}><h1 className={s.logo}>PÃO DOURADO</h1></div>
         <nav className={s.nav}>
@@ -85,38 +112,17 @@ export default function Clientes() {
         </div>
       </aside>
 
-      {/* CONTEÚDO PRINCIPAL */}
       <main className={s.content}>
-        
         <header className={s.pageHeader}>
           <div>
             <h2 className={s.title}>Clientes</h2>
             <p className={s.subtitle}>Gerencie sua base de clientes fiéis</p>
           </div>
-          <button className={s.btnAdd} onClick={() => openModal()}>
+          <button className={s.btnAdd} onClick={openModal}>
             <Plus size={18} /> Novo Cliente
           </button>
         </header>
 
-        {/* CARDS DE RESUMO */}
-        <div className={s.statsGrid}>
-          <div className={s.statCard}>
-            <div className={s.statInfo}>
-              <span>Total de Clientes</span>
-              <strong>{clientes.length}</strong>
-            </div>
-            <div className={`${s.iconWrapper} ${s.blue}`}><Users size={24} /></div>
-          </div>
-          <div className={s.statCard}>
-            <div className={s.statInfo}>
-              <span>Clientes VIP</span>
-              <strong>{clientes.filter(c => c.status === 'VIP').length}</strong>
-            </div>
-            <div className={`${s.iconWrapper} ${s.gold}`}><UserCheck size={24} /></div>
-          </div>
-        </div>
-
-        {/* TABELA */}
         <div className={s.mainCard}>
           <div className={s.toolbar}>
             <div className={s.searchBox}>
@@ -137,7 +143,6 @@ export default function Clientes() {
                   <th>Nome / Email</th>
                   <th>Contato</th>
                   <th>Endereço</th>
-                  <th>Compras</th>
                   <th>Status</th>
                   <th>Ações</th>
                 </tr>
@@ -162,18 +167,10 @@ export default function Clientes() {
                     <td className={s.addressCell}>
                       <MapPin size={14} className={s.iconSmall} /> {cliente.endereco}
                     </td>
-                    <td className={s.centerAlign}>
-                      <span className={s.comprasBadge}>{cliente.totalCompras}</span>
-                    </td>
                     <td>
-                      <span className={`${s.statusBadge} ${s[cliente.status.toLowerCase()]}`}>
-                        {cliente.status}
-                      </span>
+                      <span className={`${s.statusBadge} ${s.ativo}`}>Ativo</span>
                     </td>
                     <td className={s.actions}>
-                      <button className={s.actionBtn} onClick={() => openModal(cliente)} title="Editar">
-                        <Edit size={16} />
-                      </button>
                       <button className={`${s.actionBtn} ${s.delete}`} onClick={() => handleDelete(cliente.id)} title="Excluir">
                         <Trash2 size={16} />
                       </button>
@@ -186,60 +183,37 @@ export default function Clientes() {
         </div>
       </main>
 
-      {/* MODAL DE CADASTRO/EDIÇÃO */}
       {isModalOpen && (
         <div className={s.modalOverlay}>
           <div className={s.modal}>
             <div className={s.modalHeader}>
-              <h3>{currentCliente ? "Editar Cliente" : "Novo Cliente"}</h3>
+              <h3>Novo Cliente</h3>
               <button onClick={() => setIsModalOpen(false)}><X size={20}/></button>
             </div>
             <form onSubmit={handleSubmit} className={s.form}>
               <div className={s.formGroup}>
                 <label>Nome Completo</label>
-                <input 
-                  type="text" required 
-                  value={formData.nome}
-                  onChange={(e) => setFormData({...formData, nome: e.target.value})}
-                />
+                <input type="text" required value={formData.nome} onChange={(e) => setFormData({...formData, nome: e.target.value})} />
               </div>
-              
               <div className={s.formRow}>
                 <div className={s.formGroup}>
-                  <label>Telefone / WhatsApp</label>
-                  <input 
-                    type="text" required placeholder="(99) 99999-9999"
-                    value={formData.telefone}
-                    onChange={(e) => setFormData({...formData, telefone: e.target.value})}
-                  />
+                  <label>Telefone</label>
+                  <input type="text" value={formData.telefone} onChange={(e) => setFormData({...formData, telefone: e.target.value})} />
                 </div>
                 <div className={s.formGroup}>
                   <label>E-mail</label>
-                  <input 
-                    type="email" 
-                    value={formData.email}
-                    onChange={(e) => setFormData({...formData, email: e.target.value})}
-                  />
+                  <input type="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} />
                 </div>
               </div>
-
               <div className={s.formGroup}>
                 <label>Endereço</label>
-                <input 
-                  type="text" placeholder="Rua, Número, Bairro"
-                  value={formData.endereco}
-                  onChange={(e) => setFormData({...formData, endereco: e.target.value})}
-                />
+                <input type="text" value={formData.endereco} onChange={(e) => setFormData({...formData, endereco: e.target.value})} />
               </div>
-
-              <button type="submit" className={s.btnSubmit}>
-                {currentCliente ? "Salvar Alterações" : "Cadastrar Cliente"}
-              </button>
+              <button type="submit" className={s.btnSubmit}>Cadastrar Cliente</button>
             </form>
           </div>
         </div>
       )}
-
     </div>
   );
 }

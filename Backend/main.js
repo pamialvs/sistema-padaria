@@ -9,6 +9,7 @@ const fornecedorRoutes = require("./routes/fornecedorRoutes");
 const estoqueRoutes = require("./routes/estoqueRoutes");
 const vendaRoutes = require("./routes/vendaRoutes"); 
 const dashboardRoutes = require("./routes/dashboardRoutes");
+const clienteRoutes = require("./routes/clienteRoutes");
 
 const app = express();
 const PORT = 3000;
@@ -26,6 +27,7 @@ app.use("/fornecedores", fornecedorRoutes);
 app.use("/estoque", estoqueRoutes);
 app.use("/vendas", vendaRoutes); 
 app.use("/dashboard", dashboardRoutes);
+app.use("/clientes", clienteRoutes);
 
 app.listen(PORT, () => {
     console.log(`✅ Backend rodando na porta ${PORT}`);
