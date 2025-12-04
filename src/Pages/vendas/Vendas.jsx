@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { jwtDecode } from "jwt-decode"; // Importação necessária para ler o ID do usuário
 import { 
   Package, Calendar, DollarSign, User, Search, Filter, 
   Plus, Eye, Trash2, X, LayoutDashboard, ShoppingCart, 
@@ -7,40 +8,16 @@ import {
 } from "lucide-react";
 import s from '../vendas/vendas.module.scss';
 
-// --- DADOS MOCKADOS ---
-const produtosMock = [
-  { id: 1, nome: "Pão Francês", preco: 0.50 },
-  { id: 2, nome: "Pão de Forma", preco: 8.90 },
-  { id: 3, nome: "Croissant", preco: 6.50 },
-  { id: 4, nome: "Bolo de Chocolate", preco: 35.00 },
-  { id: 5, nome: "Sonho", preco: 4.50 },
-];
-
-const vendasMock = [
-  {
-    id: 1, data: "2024-01-15", cliente: "João Silva",
-    itens: [{ produto: "Pão Francês", quantidade: 10, preco: 0.50 }, { produto: "Croissant", quantidade: 2, preco: 6.50 }],
-    total: 18.00, status: "Concluída", pagamento: "Dinheiro"
-  },
-  {
-    id: 2, data: "2024-01-15", cliente: "Maria Santos",
-    itens: [{ produto: "Bolo de Chocolate", quantidade: 1, preco: 35.00 }, { produto: "Pão de Forma", quantidade: 2, preco: 8.90 }],
-    total: 52.80, status: "Concluída", pagamento: "Cartão"
-  },
-  {
-    id: 3, data: "2024-01-14", cliente: "Carlos Oliveira",
-    itens: [{ produto: "Sonho", quantidade: 5, preco: 4.50 }, { produto: "Pão Francês", quantidade: 15, preco: 0.50 }],
-    total: 30.00, status: "Concluída", pagamento: "PIX"
-  },
-];
-
 export default function GerenciarVendas() {
   const navigate = useNavigate();
-  const [vendas, setVendas] = useState(vendasMock);
+  
+  // Estados de Dados
+  const [vendas, setVendas] = useState([]); // Inicia vazio, será preenchido pela API (se quiser listar histórico) ou manter mock
+  const [produtos, setProdutos] = useState([]); // Produtos vindos da API
+  
+  // Estados de Filtro e UI
   const [searchTerm, setSearchTerm] = useState("");
   const [filtroStatus, setFiltroStatus] = useState("todas");
-  
-  // Modais
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [detalhesVenda, setDetalhesVenda] = useState(null);
 
@@ -50,6 +27,33 @@ export default function GerenciarVendas() {
     pagamento: "Dinheiro",
     itens: [{ produtoId: "", quantidade: 1 }]
   });
+
+  // --- 1. BUSCAR PRODUTOS DO BACKEND AO CARREGAR ---
+  useEffect(() => {
+    async function fetchProdutos() {
+      try {
+        const response = await fetch("http://localhost:3000/produtos");
+        const data = await response.json();
+        
+        // ADAPTAÇÃO PARA A POC:
+        // O banco não tem preço de venda no Produto, então geramos um fictício
+        // para que o cálculo de total funcione na tela.
+        const produtosComPreco = data.map(p => ({
+          ...p,
+          // O Postgres retorna tudo em minúsculo (idproduto, nomeproduto)
+          id: p.idproduto, 
+          nome: p.nomeproduto,
+          preco: (Math.random() * (20 - 5) + 5) // Preço aleatório entre 5 e 20
+        }));
+        
+        setProdutos(produtosComPreco);
+      } catch (error) {
+        console.error("Erro ao buscar produtos:", error);
+        alert("Erro ao conectar com o servidor.");
+      }
+    }
+    fetchProdutos();
+  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem('authToken');
@@ -74,36 +78,85 @@ export default function GerenciarVendas() {
 
   const calcularTotalNovaVenda = () => {
     return novaVenda.itens.reduce((total, item) => {
-      const produto = produtosMock.find(p => p.id === parseInt(item.produtoId));
+      // Busca no estado 'produtos' que carregamos da API
+      const produto = produtos.find(p => p.id === parseInt(item.produtoId));
       return total + (produto ? produto.preco * item.quantidade : 0);
     }, 0);
   };
 
-  const handleSubmitVenda = (e) => {
+  // --- 2. ENVIAR VENDA PARA O BACKEND ---
+  const handleSubmitVenda = async (e) => {
     e.preventDefault();
     
-    const itensVenda = novaVenda.itens.map(item => {
-      const produto = produtosMock.find(p => p.id === parseInt(item.produtoId));
-      if (!produto) return null;
-      return { produto: produto.nome, quantidade: item.quantidade, preco: produto.preco };
-    }).filter(Boolean); // Remove nulos
+    // Obter Token e ID do Colaborador
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+        alert("Sessão expirada. Faça login novamente.");
+        return navigate('/');
+    }
+    
+    let user;
+    try {
+        user = jwtDecode(token);
+    } catch (err) {
+        console.error("Erro token:", err);
+        return;
+    }
 
-    if (itensVenda.length === 0) return alert("Adicione pelo menos um produto válido.");
+    // Preparar lista de IDs "flat" para o Backend
+    // Exemplo: {id: 1, qtd: 2} vira [1, 1] no array
+    const listaIdsProdutos = [];
+    novaVenda.itens.forEach(item => {
+        for (let i = 0; i < item.quantidade; i++) {
+            listaIdsProdutos.push(parseInt(item.produtoId));
+        }
+    });
 
-    const vendaCriada = {
-      id: vendas.length + 1,
-      data: new Date().toISOString().split('T')[0],
-      cliente: novaVenda.cliente,
-      itens: itensVenda,
-      total: calcularTotalNovaVenda(),
-      status: "Concluída",
-      pagamento: novaVenda.pagamento
+    if (listaIdsProdutos.length === 0) return alert("Adicione produtos à venda.");
+
+    const payload = {
+        idColaborador: user.id, // ID vindo do Token JWT
+        valorTotal: calcularTotalNovaVenda(),
+        pagamento: novaVenda.pagamento,
+        produtos: listaIdsProdutos
     };
 
-    setVendas([vendaCriada, ...vendas]);
-    setNovaVenda({ cliente: "", pagamento: "Dinheiro", itens: [{ produtoId: "", quantidade: 1 }] });
-    setIsAddModalOpen(false);
-    alert("Venda registrada com sucesso!");
+    try {
+        const response = await fetch("http://localhost:3000/vendas", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        });
+
+        if (response.ok) {
+            const result = await response.json();
+            alert(`Venda #${result.idVenda} registrada com sucesso!`);
+            
+            // Adiciona visualmente à lista (para não precisar recarregar tudo agora)
+            const vendaVisual = {
+                id: result.idVenda || Date.now(),
+                data: new Date().toISOString(),
+                cliente: novaVenda.cliente,
+                itens: novaVenda.itens.map(i => {
+                    const p = produtos.find(prod => prod.id === parseInt(i.produtoId));
+                    return { produto: p?.nome, quantidade: i.quantidade, preco: p?.preco };
+                }),
+                total: payload.valorTotal,
+                status: "Concluída",
+                pagamento: novaVenda.pagamento
+            };
+            
+            setVendas([vendaVisual, ...vendas]);
+            setNovaVenda({ cliente: "", pagamento: "Dinheiro", itens: [{ produtoId: "", quantidade: 1 }] });
+            setIsAddModalOpen(false);
+        } else {
+            const erro = await response.json();
+            alert("Erro: " + erro.erro);
+        }
+    } catch (error) {
+        console.error(error);
+        alert("Erro ao salvar venda.");
+    }
   };
 
   // --- FILTROS ---
@@ -124,7 +177,7 @@ export default function GerenciarVendas() {
         <nav className={s.nav}>
           <a href="/dashboard" className={s.navItem}><LayoutDashboard size={20}/> <span>Dashboard</span></a>
           <a href="#" className={`${s.navItem} ${s.active}`}><ShoppingCart size={20}/> <span>Vendas</span></a>
-          <a href="#" className={s.navItem}><Package size={20}/> <span>Estoque</span></a>
+          <a href="/estoque" className={s.navItem}><Package size={20}/> <span>Estoque</span></a>
           <a href="#" className={s.navItem}><Users size={20}/> <span>Clientes</span></a>
           <a href="#" className={s.navItem}><FileText size={20}/> <span>Relatórios</span></a>
         </nav>
@@ -200,25 +253,33 @@ export default function GerenciarVendas() {
                 </tr>
               </thead>
               <tbody>
-                {vendasFiltradas.map((venda) => (
-                  <tr key={venda.id}>
-                    <td>{new Date(venda.data).toLocaleDateString('pt-BR')}</td>
-                    <td className={s.clientName}>{venda.cliente}</td>
-                    <td>{venda.itens.length} itens</td>
-                    <td className={s.totalValue}>R$ {venda.total.toFixed(2)}</td>
-                    <td><span className={s.badge}>{venda.pagamento}</span></td>
-                    <td>
-                      <span className={`${s.statusBadge} ${s[venda.status.toLowerCase()]}`}>
-                        {venda.status}
-                      </span>
-                    </td>
-                    <td>
-                      <button className={s.actionBtn} onClick={() => setDetalhesVenda(venda)}>
-                        <Eye size={18} />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                {vendasFiltradas.length > 0 ? (
+                    vendasFiltradas.map((venda) => (
+                    <tr key={venda.id}>
+                        <td>{new Date(venda.data).toLocaleDateString('pt-BR')}</td>
+                        <td className={s.clientName}>{venda.cliente}</td>
+                        <td>{venda.itens.length} itens</td>
+                        <td className={s.totalValue}>R$ {parseFloat(venda.total).toFixed(2)}</td>
+                        <td><span className={s.badge}>{venda.pagamento}</span></td>
+                        <td>
+                        <span className={`${s.statusBadge} ${s[venda.status.toLowerCase()]}`}>
+                            {venda.status}
+                        </span>
+                        </td>
+                        <td>
+                        <button className={s.actionBtn} onClick={() => setDetalhesVenda(venda)}>
+                            <Eye size={18} />
+                        </button>
+                        </td>
+                    </tr>
+                    ))
+                ) : (
+                    <tr>
+                        <td colSpan="7" style={{textAlign: "center", padding: "2rem", color: "#888"}}>
+                            Nenhuma venda registrada ainda. Clique em "Nova Venda".
+                        </td>
+                    </tr>
+                )}
               </tbody>
             </table>
           </div>
@@ -243,13 +304,13 @@ export default function GerenciarVendas() {
                 {detalhesVenda.itens.map((item, idx) => (
                   <li key={idx}>
                     <span>{item.produto} (x{item.quantidade})</span>
-                    <span>R$ {(item.quantidade * item.preco).toFixed(2)}</span>
+                    <span>R$ {(item.quantidade * (item.preco || 0)).toFixed(2)}</span>
                   </li>
                 ))}
               </ul>
               <div className={s.modalTotal}>
                 <span>Total</span>
-                <span>R$ {detalhesVenda.total.toFixed(2)}</span>
+                <span>R$ {parseFloat(detalhesVenda.total).toFixed(2)}</span>
               </div>
             </div>
           </div>
@@ -291,7 +352,7 @@ export default function GerenciarVendas() {
 
               <div className={s.itemsSection}>
                 <div className={s.itemsHeader}>
-                  <label>Produtos</label>
+                  <label>Produtos (Carregados do Banco)</label>
                   <button type="button" onClick={handleAddItem} className={s.btnSmall}>
                     <Plus size={14}/> Add
                   </button>
@@ -304,8 +365,10 @@ export default function GerenciarVendas() {
                       onChange={(e) => handleItemChange(index, 'produtoId', e.target.value)}
                     >
                       <option value="">Selecione...</option>
-                      {produtosMock.map(p => (
-                        <option key={p.id} value={p.id}>{p.nome} (R$ {p.preco.toFixed(2)})</option>
+                      {produtos.map(p => (
+                        <option key={p.id} value={p.id}>
+                            {p.nome} (Est. R$ {p.preco.toFixed(2)})
+                        </option>
                       ))}
                     </select>
                     <input 
